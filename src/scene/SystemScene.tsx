@@ -25,8 +25,9 @@ import {
   Vector3,
 } from 'three'
 import { onSystemEvent, type SystemEvent } from '../system/bus'
-import { CHAPTER_FOCUS, EDGES, NODE_IDS, NODES, SHOTS, type NodeId, type Shot } from '../system/graph'
-import { getProgress } from '../system/progress'
+import { CHAPTER_FOCUS, EDGES, EXPLORE_SHOT, NODE_IDS, NODES, SHOTS, type NodeId, type Shot } from '../system/graph'
+import { placeHotspot } from '../system/hotspots'
+import { getChapter, getExplore } from '../system/view'
 import { edgeGeometry, footprintGeometry, LABEL_ASPECT, labelTexture, solidGeometry, traceGeometry } from './geometry'
 import { nodeShape } from './nodeShapes'
 import { LABEL_FONT, PALETTE } from './palette'
@@ -310,14 +311,11 @@ export function SystemScene({ posterChapter, onReady }: SystemSceneProps) {
 
   useFrame((_, rawDelta) => {
     const dt = Math.min(rawDelta, 0.05)
-    const p = MathUtils.clamp(still ? (posterChapter as number) : getProgress(), 0, SHOTS.length - 1)
-    const lo = Math.floor(p)
-    const hi = Math.min(SHOTS.length - 1, lo + 1)
-    const f = p - lo
+    const chapter = still ? (posterChapter as number) : getChapter()
     const ease = (lambda: number) => (still || !rig.current.started ? 1 : 1 - Math.exp(-lambda * dt))
 
-    // камера
-    const want = mixShot(SHOTS[lo], SHOTS[hi], f)
+    // камера: на проекте стоит у его узла, иначе общий вид, который опускается к карте по скроллу
+    const want = chapter === null ? mixShot(SHOTS[0], EXPLORE_SHOT, getExplore()) : SHOTS[chapter]
     const r = rig.current
     const k = ease(3.2)
     r.x += (want.x - r.x) * k
@@ -337,6 +335,7 @@ export function SystemScene({ posterChapter, onReady }: SystemSceneProps) {
       r.z + dist * Math.sin(polar) * Math.cos(azimuth),
     )
     camera.lookAt(r.x, 0.8, r.z)
+    camera.updateMatrixWorld()
     const fog = scene.fog as Fog | null
     if (fog) {
       fog.near = dist * 0.95
@@ -348,10 +347,9 @@ export function SystemScene({ posterChapter, onReady }: SystemSceneProps) {
     // узлы
     const kNode = ease(5)
     map.nodes.forEach((node) => {
-      const [focusA, liftA] = chapterState(lo, node.id)
-      const [focusB, liftB] = chapterState(hi, node.id)
-      node.focus += (MathUtils.lerp(focusA, focusB, f) - node.focus) * kNode
-      node.lift += (MathUtils.lerp(liftA, liftB, f) - node.lift) * kNode
+      const [focus, lift] = chapterState(chapter ?? 0, node.id)
+      node.focus += (focus - node.focus) * kNode
+      node.lift += (lift - node.lift) * kNode
       node.kick = Math.max(0, node.kick - dt * 2.2)
       const bump = 1 + node.kick * 0.05
       node.body.scale.set(bump, node.lift * bump, bump)
@@ -363,6 +361,9 @@ export function SystemScene({ posterChapter, onReady }: SystemSceneProps) {
       node.footMat.color.lerpColors(C.edgeDim, C.accent, node.focus)
       node.labelMat.color.lerpColors(C.label, C.labelOn, Math.max(node.focus, node.kick))
       node.labelMat.opacity = 0.45 + 0.55 * Math.max(raised, node.focus)
+      // кнопка узла в интерфейсе стоит на середине его высоты
+      point.set(NODES[node.id].x, node.height * node.lift * 0.5, NODES[node.id].z).project(camera)
+      placeHotspot(node.id, (point.x * 0.5 + 0.5) * size.width, (0.5 - point.y * 0.5) * size.height, point.z < 1)
     })
     map.traces.forEach((trace) => {
       trace.material.color.lerpColors(C.trace, C.traceOn, Math.max(map.nodes[trace.from].focus, map.nodes[trace.to].focus))

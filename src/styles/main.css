@@ -15,7 +15,6 @@
   --font-mono: 'Martian Mono Variable', ui-monospace, monospace;
 
   --topbar: 56px;
-  --hud-bar: 0px;
   --gutter: 20px;
   --radius: 3px;
 
@@ -42,7 +41,6 @@ html {
 
 body {
   margin: 0;
-  padding-bottom: var(--hud-bar);
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-text);
@@ -216,6 +214,12 @@ select {
 main {
   position: relative;
   z-index: 1;
+  /* сквозь пустые места главной кликается карта */
+  pointer-events: none;
+}
+
+main:focus {
+  outline: none;
 }
 
 .chapter {
@@ -235,6 +239,7 @@ main {
 }
 
 .chapter__body {
+  pointer-events: auto;
   flex: 1;
   padding: 28px var(--gutter) 64px;
   background: var(--bg);
@@ -283,7 +288,8 @@ h3 {
 }
 
 .eyebrow + h1,
-.eyebrow + h2 {
+.eyebrow + h2,
+.sub > h2 {
   margin-top: 14px;
 }
 
@@ -310,10 +316,6 @@ h3 + .kicker {
   padding-top: 20px;
   margin-top: 28px;
   border-top: 1px solid var(--line);
-}
-
-.hint__wide {
-  display: none;
 }
 
 .note,
@@ -998,72 +1000,149 @@ label > .mono {
   text-transform: uppercase;
 }
 
-/* ───────── Журнал событий ───────── */
-/* узкий экран: одна строка внизу, последнее событие */
-.hud {
-  --hud-bar: 34px;
-  position: fixed;
-  inset: auto 0 0;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  height: var(--hud-bar);
-  padding: 0 var(--gutter);
-  background: var(--bg);
-  border-top: 1px solid var(--line-strong);
-  color: var(--muted);
-  font-size: 0.625rem;
-  pointer-events: none;
-}
-
-body {
-  --hud-bar: 34px;
-}
-
-.hud__head span:first-child,
-.hud__foot span:not(:nth-child(2)),
-.hud__log li:not(:last-child) {
-  display: none;
-}
-
-.hud__live {
-  display: block;
-  width: 7px;
-  height: 7px;
+/* ───────── Кнопки на узлах карты ───────── */
+.hotspots {
+  position: absolute;
+  inset: 0;
   overflow: hidden;
-  background: var(--accent);
+}
+
+.hotspot {
+  position: absolute;
+  top: -42px;
+  left: -42px;
+  width: 84px;
+  height: 84px;
+  padding: 0;
+  border: 0;
   border-radius: 50%;
-  color: transparent;
+  background: none;
+  cursor: pointer;
+  pointer-events: auto;
+  visibility: hidden;
 }
 
-.hud__log {
-  flex: 1;
-  min-width: 0;
+.hotspot:focus-visible {
+  outline-offset: -6px;
 }
 
-.hud__log li {
-  display: flex;
-  gap: 10px;
-  white-space: nowrap;
+/* ───────── Услуги ───────── */
+.offer {
+  border-bottom: 1px solid var(--line);
 }
 
-.hud__log time {
-  display: none;
+.offer button {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 11px 0 11px 14px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-left: 2px solid transparent;
+  background: none;
+  text-align: left;
+  cursor: pointer;
 }
 
-.hud__log b {
+.offer b {
+  font-size: 1.0625rem;
   font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.offer span {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.offer button:hover b,
+.offer button[aria-pressed='true'] b {
+  color: var(--accent);
+}
+
+.offer button[aria-pressed='true'] {
+  border-left-color: var(--accent);
+}
+
+/* ───────── Карточка проекта ───────── */
+.card {
+  position: relative;
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  margin-bottom: 28px;
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  pointer-events: auto;
+}
+
+.card h3 {
+  padding-right: 72px;
+}
+
+.card .kicker {
+  padding-right: 72px;
+}
+
+.card__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 6px 8px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.card__close:hover {
   color: var(--ink);
 }
 
-.hud__log span {
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* ───────── Страница проекта ───────── */
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
-.hud__foot {
-  white-space: nowrap;
+.back:hover {
+  color: var(--ink);
+}
+
+.back + .eyebrow {
+  margin-top: 28px;
+}
+
+.title {
+  font-size: clamp(1.75rem, 7vw, 2.75rem);
+}
+
+.sub > h2 {
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+}
+
+.foot {
+  margin-top: 44px !important;
+  padding-top: 28px;
+  border-top: 1px solid var(--line-strong);
+}
+
+.foot > * + * {
+  margin-top: 18px;
+}
+
+.foot .mono {
+  color: var(--ink);
+  text-transform: uppercase;
+  margin-right: 6px;
 }
 
 /* ───────── Широкий экран: текст слева, карта справа ───────── */
@@ -1101,8 +1180,7 @@ body {
   }
 
   body {
-    --hud-bar: 0px;
-  }
+    }
 
   /* затемнение под колонкой текста, чтобы линии карты не мешали читать */
   .stage::after {
@@ -1134,16 +1212,11 @@ body {
     white-space: nowrap;
   }
 
-  .topbar__nav a span {
-    color: var(--line-strong);
-  }
-
-  .topbar__nav a:hover,
-  .topbar__nav a[aria-current] {
+  .topbar__nav a:hover {
     color: var(--ink);
   }
 
-  .topbar__nav a[aria-current] span {
+  .topbar__nav a[aria-current] {
     color: var(--accent);
   }
 
@@ -1176,96 +1249,25 @@ body {
     font-size: clamp(2rem, 3vw, 2.75rem);
   }
 
-  .hint__wide {
-    display: inline;
+}
+
+@media (min-width: 1100px) {
+  .title {
+    font-size: clamp(2rem, 3vw, 2.75rem);
   }
 
-  .hint__narrow {
-    display: none;
+  .chapter--offer .chapter__body {
+    padding-top: calc(var(--topbar) + 8vh);
+    padding-bottom: 8vh;
   }
 
-  .hud {
-    inset: auto 24px 24px auto;
-    display: block;
-    width: 380px;
-    height: auto;
-    padding: 12px 14px;
-    background: rgb(10 12 15 / 0.94);
-    border: 1px solid var(--line-strong);
-    border-radius: var(--radius);
-    font-size: 0.6875rem;
-  }
-
-  .hud__head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--line);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-
-  .hud__head span:first-child,
-  .hud__foot span:not(:nth-child(2)),
-  .hud__log li:not(:last-child) {
-    display: inline;
-  }
-
-  .hud__log li:not(:last-child) {
-    display: grid;
-  }
-
-  .hud__live {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    width: auto;
-    height: auto;
-    background: none;
-    border-radius: 0;
-    color: var(--muted);
-  }
-
-  .hud__live::before {
-    content: '';
-    width: 7px;
-    height: 7px;
-    background: var(--accent);
-    border-radius: 50%;
-  }
-
-  .hud__log {
-    display: grid;
-    align-content: end;
-    height: 106px;
-    padding: 8px 0;
-  }
-
-  .hud__log li {
-    display: grid;
-    grid-template-columns: 78px 92px 1fr;
-    gap: 0;
-    line-height: 18px;
-  }
-
-  .hud__log time {
-    display: block;
-  }
-
-  .hud__log li:not(:last-child) b {
-    color: var(--muted);
-  }
-
-  .hud__log li:last-child span {
-    color: var(--ink);
-  }
-
-  .hud__foot {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 2px 14px;
-    padding-top: 8px;
-    border-top: 1px solid var(--line);
+  .card {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 5;
+    width: 400px;
+    margin: 0;
+    background: rgb(15 18 22 / 0.96);
   }
 }

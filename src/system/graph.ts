@@ -75,6 +75,25 @@ export const SHOTS: Shot[] = [
   { x: -3, z: 2, dist: 40, azimuth: -52, polar: 60, narrow: 1.5 },
 ]
 
+/** Общий вид карты на главной, когда посетитель долистал до блока с услугами: ближе и круче сверху. */
+export const EXPLORE_SHOT: Shot = { x: 3.5, z: -0.5, dist: 50, azimuth: 14, polar: 42, narrow: 1.5 }
+
+/** Какую главу открывает узел по клику. */
+export const NODE_CHAPTER: Record<NodeId, number> = {
+  client: 6,
+  site: 1,
+  bot: 2,
+  crm: 3,
+  db: 3,
+  stream: 4,
+  queue: 4,
+  parser: 5,
+  llm: 5,
+}
+
+/** Глава, в которой услуга уже работает. Порядок совпадает с `offer.items` в контенте. */
+export const OFFER_CHAPTER = [1, 1, 2, 3, 5, 5, 4, 3]
+
 /** Кратчайший маршрут по связям, без учёта направления. */
 export function route(from: NodeId, to: NodeId): NodeId[] {
   if (from === to) return [from]
@@ -99,4 +118,3 @@ export function route(from: NodeId, to: NodeId): NodeId[] {
   return [from]
 }
 
-export const routeLabel = (nodes: NodeId[]): string => nodes.map((id) => NODES[id].label).join(' → ')

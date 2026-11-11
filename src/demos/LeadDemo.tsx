@@ -5,7 +5,6 @@ import { ArrowRight } from '../components/Icons'
 import { DemoBadge } from '../components/Links'
 import { emit } from '../system/bus'
 import type { NodeId } from '../system/graph'
-import { routeLabel } from '../system/graph'
 
 interface Lead {
   no: number
@@ -42,16 +41,15 @@ export function LeadDemo() {
   const submit = (event: FormEvent) => {
     event.preventDefault()
     if (!name.trim() || (stage > 0 && stage < 4)) return
-    const no = leadFirstNumber + leads.length
-    setLeads((prev) => [...prev, { no, name: name.trim(), need, budget }])
+    setLeads((prev) => [...prev, { no: leadFirstNumber + prev.length, name: name.trim(), need, budget }])
     setStage(1)
-    emit({ kind: 'lead', text: `#${no} ${routeLabel(['site', 'bot', 'crm', 'stream'])}`, route: LEAD_ROUTE[0] })
+    emit({ route: LEAD_ROUTE[0] })
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
     const step = reduced ? 0 : STEP_MS
     timers.current = ([2, 3, 4] as Stage[]).map((next, i) =>
       window.setTimeout(() => {
         setStage(next)
-        if (LEAD_ROUTE[i + 1]) emit({ kind: 'lead', route: LEAD_ROUTE[i + 1], silent: true })
+        if (LEAD_ROUTE[i + 1]) emit({ route: LEAD_ROUTE[i + 1] })
       }, step * (i + 1)),
     )
   }

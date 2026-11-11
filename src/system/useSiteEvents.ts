@@ -1,27 +1,25 @@
 import { useEffect } from 'react'
 import { emit } from './bus'
-import { CHAPTER_NODE, route, routeLabel } from './graph'
-import { getActiveChapter, onActiveChapter } from './progress'
+import { CHAPTER_NODE, route } from './graph'
+import { getChapter, onViewChange } from './view'
 
-const INTERACTIVE = 'a, button, input, select, textarea, label, summary'
 /** области, клик по которым не считается кликом по карте */
-const NOT_MAP = '.chapter__body, .topbar, .hud'
-const LABEL_LIMIT = 36
+const NOT_MAP = '.chapter__body, .topbar, .card, a, button, input, select, label'
 
 /**
- * Превращает действия посетителя в события системы:
- * смена главы, клик по ссылке или кнопке, клик по карте.
+ * Превращает действия посетителя в события карты:
+ * выбор проекта, клик по ссылке или кнопке, клик по пустому месту карты.
  */
 export function useSiteEvents(): void {
   useEffect(() => {
-    emit({ kind: 'boot' })
-    let previous = getActiveChapter()
+    let previous = getChapter() ?? 0
 
-    const stopChapters = onActiveChapter(() => {
-      const next = getActiveChapter()
+    const stopView = onViewChange(() => {
+      const next = getChapter() ?? 0
+      if (next === previous) return
       const path = route(CHAPTER_NODE[previous], CHAPTER_NODE[next])
       previous = next
-      emit({ kind: 'move', text: routeLabel(path), route: path })
+      emit({ route: path })
     })
 
     const onClick = (event: MouseEvent) => {
@@ -30,18 +28,16 @@ export function useSiteEvents(): void {
       const control = target.closest<HTMLElement>('a, button')
       if (control) {
         if (control.dataset.log === 'off') return
-        const label = (control.dataset.log ?? control.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, LABEL_LIMIT)
-        const node = CHAPTER_NODE[getActiveChapter()]
-        if (label) emit({ kind: 'click', text: label, route: route('client', node), kick: [node] })
+        const node = CHAPTER_NODE[getChapter() ?? 0]
+        emit({ route: route('client', node), kick: [node] })
         return
       }
-      if (target.closest(INTERACTIVE) || target.closest(NOT_MAP)) return
-      emit({ kind: 'ping', textKey: 'pingText', broadcast: true })
+      if (!target.closest(NOT_MAP)) emit({ broadcast: true })
     }
 
     document.addEventListener('click', onClick)
     return () => {
-      stopChapters()
+      stopView()
       document.removeEventListener('click', onClick)
     }
   }, [])

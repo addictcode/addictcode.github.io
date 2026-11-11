@@ -1,33 +1,36 @@
-import { Chapters } from './components/Chapters'
 import { Header } from './components/Header'
-import { Hud } from './components/Hud'
+import { Home } from './components/Home'
+import { ProjectPage } from './components/ProjectPage'
 import { LangProvider, useLang } from './i18n/LangContext'
 import { PosterStage } from './stage/PosterStage'
 import { Stage } from './stage/Stage'
-import { useScrollProgress } from './system/progress'
 import { useSiteEvents } from './system/useSiteEvents'
+import { useRoute } from './system/view'
 
 function SkipLink() {
   const { t } = useLang()
   return (
-    <a className="skip" href="#main" data-log="off">
+    <a className="skip" href="#main" data-log="off" onClick={(event) => {
+      // адрес страницы занят маршрутом, поэтому фокус переносится вручную
+      event.preventDefault()
+      document.getElementById('main')?.focus()
+    }}>
       {t.ui.skip}
     </a>
   )
 }
 
 function Site() {
-  useScrollProgress()
+  const route = useRoute()
   useSiteEvents()
   return (
     <>
       <SkipLink />
       <Stage />
       <Header />
-      <main id="main">
-        <Chapters />
+      <main id="main" tabIndex={-1}>
+        {route === null ? <Home /> : <ProjectPage chapter={route} />}
       </main>
-      <Hud />
     </>
   )
 }

@@ -11,7 +11,7 @@ const page = await browser.newPage({ viewport: { width: 1200, height: 630 }, dev
 await page.goto(`${site.url}?static`, { waitUntil: 'networkidle' })
 
 // OG — это первый экран как есть: заголовок и карта
-await page.addStyleTag({ content: '.topbar, .hud, .hint, .note, .skip { display: none !important }' })
+await page.addStyleTag({ content: '.topbar, .hint, .skip { display: none !important }' })
 await page.waitForFunction(() => document.querySelector('.stage__poster img').complete)
 await page.evaluate(() => document.fonts.ready)
 await page.waitForTimeout(300)
