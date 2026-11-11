@@ -1,6 +1,6 @@
 // Сквозная проверка собранного сайта в Chromium:
 // скриншоты 1440 и 375 px на каждой главе, горизонтальный скролл,
-// оба демо, переключатель языка, режимы без WebGL и с prefers-reduced-motion.
+// оба демо, журнал событий, переключатель языка, режимы без WebGL и с prefers-reduced-motion.
 // Запуск: npm run build && npm run check. Скриншоты ложатся в test-results/.
 import { mkdir } from 'node:fs/promises'
 import { launchBrowser, startSite } from './browser.mjs'
@@ -41,24 +41,28 @@ for (const [name, viewport] of [
   ['mobile-375', { width: 375, height: 740 }],
 ]) {
   console.log(`\n${name}`)
-  const { context, page, errors } = await open({ viewport, deviceScaleFactor: 1, hasTouch: name.startsWith('mobile') })
+  const desktop = name.startsWith('desktop')
+  const { context, page, errors } = await open({ viewport, deviceScaleFactor: 1, hasTouch: !desktop })
   await page.waitForSelector('html[data-canvas]', { timeout: 30000 }).catch(() => {})
-  ok((await page.locator('html[data-canvas]').count()) === 1, '3D-сцена отрисовалась')
+  ok((await page.locator('html[data-canvas]').count()) === 1, '3D-карта отрисовалась')
   for (const [index, id] of CHAPTERS.entries()) {
     await scrollToChapter(page, id)
-    await page.waitForTimeout(1300)
+    await page.waitForTimeout(1600)
     await page.screenshot({ path: `${OUT}/${name}-${index}-${id}.png` })
-    if (name.startsWith('desktop')) {
-      const current = (await page.locator('.rail a[aria-current] .rail__no').textContent()).trim()
+    if (desktop) {
+      const current = (await page.locator('.topbar__nav a[aria-current] span').textContent()).trim()
       ok(current === String(index).padStart(2, '0'), `глава ${index} (${id}): в навигации активна ${current}`)
     }
   }
-  const visible = await page.locator(`#${CHAPTERS[CHAPTERS.length - 1]} .plate`).isVisible()
-  ok(visible, 'последний экран виден после прокрутки')
-  await page.locator('#contact [data-open="contact"]').click()
-  await page.waitForTimeout(500)
-  await page.screenshot({ path: `${OUT}/${name}-sheet.png` })
-  await page.locator('.sheet__close').click()
+  ok(await page.locator('#contact .handle').isVisible(), 'последняя глава видна после прокрутки')
+  ok((await page.locator('.hud').textContent()).includes('client'), 'переходы между главами попали в журнал')
+  if (desktop) {
+    const count = () => page.locator('.hud__foot span:nth-child(2)').textContent()
+    const before = await count()
+    await page.mouse.click(1000, 300)
+    await page.waitForTimeout(300)
+    ok((await count()) !== before && (await page.locator('.hud__log li:last-child b').textContent()) === 'ping', 'клик по карте даёт ping')
+  }
   ok((await overflow(page)) <= 0, 'нет горизонтального скролла')
   ok(errors.length === 0, `нет ошибок в консоли ${errors.join(' | ')}`)
   await context.close()
@@ -68,9 +72,6 @@ for (const [name, viewport] of [
 console.log('\nдемо: монитор объявлений')
 {
   const { context, page } = await open()
-  await scrollToChapter(page, 'bot')
-  await page.waitForTimeout(1500)
-  await page.locator('#bot [data-open="bot"]').click()
   const demo = page.locator('[data-demo="monitor"]')
   await demo.scrollIntoViewIfNeeded()
   await demo.locator('[data-field="brand"]').selectOption({ index: 2 })
@@ -93,7 +94,8 @@ console.log('\nдемо: заявка → бот → CRM → дашборд')
   const { context, page } = await open()
   await page.locator('#intro [data-open="lead"]').click()
   const demo = page.locator('[data-demo="lead"]')
-  await demo.scrollIntoViewIfNeeded()
+  await page.waitForFunction(() => Math.abs(document.querySelector('#lead').getBoundingClientRect().top) < 200, null, { timeout: 10000 })
+  ok(true, 'кнопка с первого экрана привела к демо')
   const before = Number(await demo.locator('[data-kpi="total"]').textContent())
   await demo.locator('input[name="name"]').fill('Тест Тестов')
   await demo.locator('select[name="need"]').selectOption({ index: 2 })
@@ -105,7 +107,8 @@ console.log('\nдемо: заявка → бот → CRM → дашборд')
   ok((await demo.locator('.run__crm tr.is-new').count()) === 1, 'в CRM появилась строка')
   const after = Number(await demo.locator('[data-kpi="total"]').textContent())
   ok(after === before + 1, `дашборд вырос: ${before} → ${after}`)
-  await demo.screenshot({ path: `${OUT}/demo-lead.png` })
+  ok((await page.locator('.hud').textContent()).includes('#1042'), 'заявка попала в журнал событий')
+  await page.screenshot({ path: `${OUT}/demo-lead.png` })
   await context.close()
 }
 
@@ -132,10 +135,7 @@ console.log('\nязык')
   ok(!cyrillic.test(await page.title()), 'заголовок вкладки на английском')
   await scrollToChapter(page, 'site')
   await page.waitForTimeout(1500)
-  await page.locator('#site [data-open="site"]').click()
-  await page.waitForTimeout(300)
-  await page.screenshot({ path: `${OUT}/lang-en-sheet.png` })
-  await page.locator('.sheet__close').click()
+  await page.screenshot({ path: `${OUT}/lang-en-site.png` })
   await page.reload({ waitUntil: 'networkidle' })
   ok((await page.getAttribute('html', 'lang')) === 'en', 'выбор языка запомнился после перезагрузки')
   await context.close()
@@ -162,14 +162,23 @@ for (const [name, options, init] of [
   await page.goto(site.url, { waitUntil: 'networkidle' })
   await page.evaluate(() => window.dispatchEvent(new Event('scroll')))
   await page.waitForTimeout(1500)
-  ok((await page.locator('html[data-live]').count()) === 0, 'включилась статичная версия')
+  ok((await page.locator('html[data-canvas]').count()) === 0, 'включилась статичная версия')
   ok((await page.locator('canvas').count()) === 0, 'canvas не создавался')
   ok((await page.locator('main h2').count()) === 6 && (await page.locator('main h1').count()) === 1, 'все главы с текстом на месте')
   for (const id of ['site', 'parsing']) {
     await scrollToChapter(page, id)
     await page.waitForTimeout(500)
-    const poster = await page.locator(`#${id} .frame__poster img`).evaluate((img) => img.complete && img.naturalWidth > 0)
-    ok(poster, `глава ${id}: статичный кадр загружен`)
+    const shown = await page
+      .waitForFunction(
+        (file) => {
+          const img = document.querySelector('.stage__poster img')
+          return img.complete && img.naturalWidth > 0 && img.currentSrc.includes(file)
+        },
+        `chapter-${CHAPTERS.indexOf(id)}`,
+        { timeout: 5000 },
+      )
+      .then(() => true, () => false)
+    ok(shown, `глава ${id}: показан её кадр`)
     await page.screenshot({ path: `${OUT}/${name}-${id}.png` })
   }
   await context.close()

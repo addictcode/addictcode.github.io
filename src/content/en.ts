@@ -16,23 +16,18 @@ export const en: Content = {
     liveDemo: 'Live demo',
     demo: 'Demo',
     externalHint: 'opens in a new tab',
-    stageAlt: 'A typographic ribbon tied into a knot',
-    details: 'Details',
-    close: 'Close',
+    stageAlt: 'A 3D system map: project nodes connected by links',
     tryDemo: 'Demo: request → CRM',
+    node: 'node',
   },
   chapters: ['Start', 'Website', 'Bot', 'CRM', 'Real time', 'Scraping & LLM', 'Contact'],
   hero: {
     name: 'Dmitry Shaibakov',
     role: 'backend developer',
-    lines: ['Sites.', 'Bots.', 'CRM.'],
-    phrase: 'I build systems to fit the task, where a request travels from the form to the result on its own.',
-    hint: 'Scroll: the ribbon will run. You can click it.',
-  },
-  words: ['Web', 'Bot', 'CRM', 'Live', 'Scrape'],
-  ribbon: {
-    main: 'WEBSITES ✕ BOTS ✕ CRM ✕ SCRAPERS ✕ LLM ✕ ',
-    stack: 'JAVA · SPRING BOOT · POSTGRESQL · REDIS · REACT · TYPESCRIPT · PYTHON · DOCKER · ',
+    title: 'Websites, bots and CRM where a request reaches the result on its own.',
+    phrase: 'I build systems to fit the task: a website with lead forms, a Telegram bot, a scraper, a CRM and whatever connects them.',
+    hint: 'On the right is a map of such a system. Scroll: the camera will travel across the nodes.',
+    hintTouch: 'Behind the text is a map of such a system. Scroll: the camera will travel across the nodes.',
   },
   site: {
     kicker: 'Commercial project · in production · client not named',
@@ -46,7 +41,6 @@ export const en: Content = {
     ],
     more: 'Also: a dealer account with personal prices and Excel export, 301 redirects from old URLs, schema.org markup, SSL Labs A+, a daily price check against the supplier with Telegram notifications.',
     stack: [{ label: 'Stack', value: 'Next.js 16, React 19, TypeScript, Tailwind 4' }],
-    points: ['A 421-item catalogue', 'Search understands “ghbdjl”', 'Admin rollback up to 40 versions'],
     mock: {
       caption: 'The diagram is drawn in code: the name, domain and screenshots are not shown. Its search works, try typing a Russian word on the English layout.',
       searchLabel: 'Catalogue search',
@@ -67,7 +61,6 @@ export const en: Content = {
       { k: 'Survival', text: 'Outlived the shutdown of the marketplace JSON API: switched to reading the catalogue page.' },
     ],
     stack: [{ label: 'Stack', value: 'Java 17, Spring Boot 3.2, PostgreSQL + Flyway, Jsoup, Docker' }],
-    points: ['New listings within seconds', 'A forum topic for every search', 'Outlived the marketplace API shutdown'],
     monitor: {
       title: 'Listing monitor',
       note: 'There are no bot screenshots, so here is a simulator. Listings and brands are made up, everything runs in the browser.',
@@ -105,7 +98,6 @@ export const en: Content = {
       { label: 'Backend', value: 'Java 25, Spring Boot 4.1, Spring Modulith, PostgreSQL + PostGIS, Flyway, JWT' },
       { label: 'Frontend', value: 'React 19, TypeScript, TanStack Router/Query, MapLibre, ECharts, API client from OpenAPI' },
     ],
-    points: ['From request to payment and analytics', '15 modules, each with its own schema', 'The database rejects double bookings'],
     pipelineLabel: 'Full order cycle',
     pipeline: ['Request', 'Quote', 'Contract', 'Crew planning', 'Execution', 'Completion act', 'Invoice', 'Payment', 'Analytics'],
     mock: {
@@ -119,7 +111,6 @@ export const en: Content = {
   realtime: {
     title: 'Real-time data',
     lead: 'Two open projects about event streams: a dashboard with alerts and a task queue.',
-    detailsTitle: 'Pulse and distributed-task-engine',
     pulse: {
       kicker: 'Open source · live demo',
       title: 'Pulse',
@@ -130,7 +121,6 @@ export const en: Content = {
         { k: 'Quality', text: 'k6 load tests, size and CLS budgets in Playwright, 5 CI workflows.' },
       ],
       stack: [{ label: 'Stack', value: 'Java 25, Spring Boot 4.1, PostgreSQL + Liquibase; TypeScript, Vite, Lightweight Charts, three.js' }],
-      points: ['About 530 instruments over WebSocket', 'Telegram alerts'],
       imageAlt: 'Pulse project cover: a dark screen with a signal grid',
     },
     engine: {
@@ -143,7 +133,6 @@ export const en: Content = {
         { k: 'Dashboard', text: 'Queue state arrives over STOMP.' },
       ],
       stack: [{ label: 'Stack', value: 'Java 21, Spring Boot 3.5, PostgreSQL, Redis' }],
-      points: ['Priorities, retries, dead-letter', 'Dashboard over STOMP'],
     },
   },
   parsing: {
@@ -159,7 +148,6 @@ export const en: Content = {
       { label: 'Backend', value: 'Python 3.12, FastAPI, SQLAlchemy 2 async, Redis queue, aiogram 3' },
       { label: 'Frontend', value: 'React 18, TanStack Query/Virtual' },
     ],
-    points: ['Several platforms, one database, no duplicates', 'Morphological search', 'An LLM scores relevance'],
     shots: [
       { alt: 'TenderRadar: procurements in progress and a procurement card', caption: 'In progress' },
       { alt: 'TenderRadar: bidding results and win rate', caption: 'Results' },
@@ -235,6 +223,28 @@ export const en: Content = {
       { name: 'Build', text: 'I build it and show intermediate results.' },
       { name: 'Handover', text: 'I hand over a working system: code, deployment, instructions.' },
     ],
-    footer: 'Vite, React, three.js. The ribbons are built in code, no ready-made models.',
+    footer: 'Vite, React, three.js. The map is built in code, no ready-made models.',
+  },
+  system: {
+    note: 'The map is schematic: nodes stand for the projects on this page, packets on the links are your actions here. Nothing is sent anywhere.',
+    hudTitle: 'Event log',
+    live: 'recording',
+    session: 'on the page',
+    events: 'events',
+    pingHint: 'click the map: ping',
+    log: {
+      boot: 'map started',
+      move: 'move',
+      click: 'click',
+      lang: 'language',
+      ping: 'ping',
+      pingText: 'across all links',
+      lead: 'request',
+      match: 'match',
+      search: 'search',
+      monitor: 'monitor',
+      monitorStart: 'started',
+      monitorDone: 'run finished',
+    },
   },
 }

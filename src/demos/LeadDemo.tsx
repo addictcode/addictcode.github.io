@@ -2,7 +2,10 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { leadFirstNumber, leadWeekSeed } from '../content/demoData'
 import { useLang } from '../i18n/LangContext'
 import { ArrowRight } from '../components/Icons'
-import { DemoBadge } from '../components/Sheets'
+import { DemoBadge } from '../components/Links'
+import { emit } from '../system/bus'
+import type { NodeId } from '../system/graph'
+import { routeLabel } from '../system/graph'
 
 interface Lead {
   no: number
@@ -15,6 +18,12 @@ interface Lead {
 type Stage = 0 | 1 | 2 | 3 | 4
 
 const STEP_MS = 850
+/** путь заявки по карте: по одному отрезку на шаг демо */
+const LEAD_ROUTE: NodeId[][] = [
+  ['client', 'site', 'bot'],
+  ['bot', 'crm'],
+  ['crm', 'stream'],
+]
 const todayIndex = (new Date().getDay() + 6) % 7
 
 /** Заявка из формы проходит бота, CRM и дашборд. Всё в памяти страницы. */
@@ -33,12 +42,17 @@ export function LeadDemo() {
   const submit = (event: FormEvent) => {
     event.preventDefault()
     if (!name.trim() || (stage > 0 && stage < 4)) return
-    setLeads((prev) => [...prev, { no: leadFirstNumber + prev.length, name: name.trim(), need, budget }])
+    const no = leadFirstNumber + leads.length
+    setLeads((prev) => [...prev, { no, name: name.trim(), need, budget }])
     setStage(1)
+    emit({ kind: 'lead', text: `#${no} ${routeLabel(['site', 'bot', 'crm', 'stream'])}`, route: LEAD_ROUTE[0] })
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
     const step = reduced ? 0 : STEP_MS
     timers.current = ([2, 3, 4] as Stage[]).map((next, i) =>
-      window.setTimeout(() => setStage(next), step * (i + 1)),
+      window.setTimeout(() => {
+        setStage(next)
+        if (LEAD_ROUTE[i + 1]) emit({ kind: 'lead', route: LEAD_ROUTE[i + 1], silent: true })
+      }, step * (i + 1)),
     )
   }
 
@@ -53,9 +67,10 @@ export function LeadDemo() {
   const total = week.reduce((sum, n) => sum + n, 0)
 
   return (
-    <section className="run" data-demo="lead" data-stage={stage}>
+    <section id="lead" className="run" data-demo="lead" data-stage={stage} aria-labelledby="lead-title">
       <header className="run__head">
         <DemoBadge />
+        <h3 id="lead-title">{d.title}</h3>
         <p>{d.intro}</p>
         <p className="run__disclaimer">{d.disclaimer}</p>
       </header>
@@ -105,7 +120,7 @@ export function LeadDemo() {
               ))}
             </select>
           </label>
-          <button type="submit" className="btn btn--solid" disabled={busy}>
+          <button type="submit" className="btn btn--solid" disabled={busy} data-log="off">
             <span>{stage === 4 ? d.form.again : d.form.submit}</span>
             <ArrowRight />
           </button>

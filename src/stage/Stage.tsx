@@ -1,16 +1,14 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { useLang } from '../i18n/LangContext'
-import { hasWebGL, pickStageMode } from './capability'
-import { useActiveChapter } from './store'
-import { applyTheme } from './theme'
-import { useScrollChapter } from './useScrollChapter'
+import { hasWebGL, pickStageMode } from '../system/capability'
+import { useActiveChapter } from '../system/progress'
 
-const RibbonCanvas = lazy(() => import('../scene/RibbonCanvas'))
+const SystemCanvas = lazy(() => import('../scene/SystemCanvas'))
 
 const WAKE_EVENTS = ['pointerdown', 'pointermove', 'touchstart', 'wheel', 'keydown', 'scroll'] as const
 
 /**
- * Первое действие посетителя. До него страница — статичные экраны с кадрами сцены,
+ * Первое действие посетителя. До него на месте карты стоит её кадр,
  * поэтому тяжёлый чанк с three.js не мешает первой отрисовке.
  * `?eager` грузит сцену сразу после загрузки страницы (для отладки и замеров).
  */
@@ -37,22 +35,29 @@ function whenNeeded(run: () => void): () => void {
   return stop
 }
 
+/** Кадр карты для главы: широкий и вертикальный. Он же — статичная версия без WebGL. */
+function Poster({ chapter }: { chapter: number }) {
+  const { t } = useLang()
+  const base = `/posters/chapter-${chapter}`
+  return (
+    <picture className="stage__poster">
+      <source media="(max-width: 1099px)" srcSet={`${base}-m.avif`} type="image/avif" />
+      <source media="(max-width: 1099px)" srcSet={`${base}-m.webp`} type="image/webp" />
+      <source srcSet={`${base}.avif`} type="image/avif" />
+      <img src={`${base}.webp`} alt={t.ui.stageAlt} width={1600} height={1000} decoding="async" fetchPriority={chapter === 0 ? 'high' : 'auto'} />
+    </picture>
+  )
+}
+
 /**
- * Слой сцены. Статичная версия — обычные экраны друг под другом с кадрами лент.
- * Живая версия закрепляет экраны, красит фон по скроллу и рисует ленты в canvas.
+ * Слой карты под текстом. Живая версия рисует карту в canvas,
+ * статичная показывает кадр текущей главы.
  */
 export function Stage() {
-  const { t } = useLang()
   const [mode, setMode] = useState(pickStageMode)
   const [load, setLoad] = useState(false)
-  const [motionOn, setMotionOn] = useState(false)
+  const [ready, setReady] = useState(false)
   const active = useActiveChapter()
-  useScrollChapter(!motionOn)
-
-  // без моушена цвет шапки и навигации идёт за активной главой
-  useEffect(() => {
-    if (!motionOn) applyTheme(active)
-  }, [active, motionOn])
 
   useEffect(() => {
     if (mode !== 'live') return
@@ -63,27 +68,15 @@ export function Stage() {
   }, [mode])
 
   useEffect(() => {
-    if (!load) return
-    let dispose: (() => void) | undefined
-    let cancelled = false
-    import('../motion/initMotion').then(({ initMotion }) => {
-      if (cancelled) return
-      dispose = initMotion()
-      setMotionOn(true)
-    })
-    return () => {
-      cancelled = true
-      dispose?.()
-      setMotionOn(false)
-      document.documentElement.removeAttribute('data-canvas')
-    }
-  }, [load])
+    document.documentElement.toggleAttribute('data-canvas', ready)
+  }, [ready])
 
   return (
-    <div className="stage" data-mode={mode}>
+    <div className="stage" data-mode={mode} data-ready={ready || undefined}>
+      {!ready && <Poster chapter={active} />}
       {load && (
         <Suspense fallback={null}>
-          <RibbonCanvas texts={t.ribbon} onReady={() => document.documentElement.setAttribute('data-canvas', '')} />
+          <SystemCanvas onReady={() => setReady(true)} />
         </Suspense>
       )}
     </div>

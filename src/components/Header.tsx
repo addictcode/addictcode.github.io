@@ -1,20 +1,41 @@
 import { chapterIds, languages } from '../content'
 import { telegramUrl } from '../content/profile'
 import { useLang } from '../i18n/LangContext'
-import { useActiveChapter } from '../stage/store'
+import { clearLog, emit } from '../system/bus'
+import { useActiveChapter } from '../system/progress'
 import { pad2 } from './format'
 
 export function Header() {
   const { t, lang, setLang } = useLang()
+  const active = useActiveChapter()
+
+  const switchLang = (code: typeof lang) => {
+    if (code === lang) return
+    setLang(code)
+    clearLog()
+    emit({ kind: 'lang', text: code.toUpperCase(), broadcast: true })
+  }
+
   return (
-    <header className="topbar" data-solid>
+    <header className="topbar">
       <a className="topbar__brand" href="#intro">
         {t.hero.name}
       </a>
+      <nav className="topbar__nav mono" aria-label={t.ui.chapterNav}>
+        <ol>
+          {t.chapters.map((name, i) => (
+            <li key={chapterIds[i]}>
+              <a href={`#${chapterIds[i]}`} aria-current={i === active ? 'step' : undefined} data-log="off">
+                <span aria-hidden="true">{pad2(i)}</span> {name}
+              </a>
+            </li>
+          ))}
+        </ol>
+      </nav>
       <div className="topbar__tools">
         <div className="langs mono" role="group" aria-label={t.ui.langSwitch}>
           {languages.map((code) => (
-            <button key={code} type="button" aria-pressed={lang === code} lang={code} onClick={() => setLang(code)}>
+            <button key={code} type="button" aria-pressed={lang === code} lang={code} data-log="off" onClick={() => switchLang(code)}>
               {code.toUpperCase()}
             </button>
           ))}
@@ -24,26 +45,5 @@ export function Header() {
         </a>
       </div>
     </header>
-  )
-}
-
-export function ChapterRail() {
-  const { t } = useLang()
-  const active = useActiveChapter()
-  return (
-    <nav className="rail" aria-label={t.ui.chapterNav} data-solid>
-      <ol>
-        {t.chapters.map((name, i) => (
-          <li key={chapterIds[i]}>
-            <a href={`#${chapterIds[i]}`} aria-current={i === active ? 'step' : undefined}>
-              <span className="visually-hidden">{name}</span>
-              <span className="rail__no mono" aria-hidden="true">
-                {pad2(i)}
-              </span>
-            </a>
-          </li>
-        ))}
-      </ol>
-    </nav>
   )
 }

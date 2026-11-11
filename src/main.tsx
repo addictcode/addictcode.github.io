@@ -1,6 +1,5 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import '@fontsource-variable/unbounded/wght.css'
 import '@fontsource-variable/geologica/wght.css'
 import '@fontsource-variable/martian-mono/wght.css'
 import './styles/main.css'

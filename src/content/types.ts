@@ -19,8 +19,6 @@ export interface CaseContent {
   /** остальное одной строкой, чтобы не раздувать список */
   more?: string
   stack: MetaRow[]
-  /** три коротких тезиса для плашки на экране; подробности открываются по кнопке */
-  points: string[]
 }
 
 export interface Content {
@@ -36,24 +34,20 @@ export interface Content {
     demo: string
     externalHint: string
     stageAlt: string
-    details: string
-    close: string
     tryDemo: string
+    node: string
   }
   /** названия глав: подписи в навигации */
   chapters: string[]
   hero: {
     name: string
     role: string
-    /** строки крупного заголовка первого экрана */
-    lines: string[]
+    title: string
     phrase: string
+    /** подсказка про карту: для экрана с картой справа и для телефона */
     hint: string
+    hintTouch: string
   }
-  /** крупные слова на экранах глав, по одному на главу после первой */
-  words: string[]
-  /** надписи, которые бегут по 3D-лентам */
-  ribbon: { main: string; stack: string }
   site: CaseContent & {
     mock: {
       caption: string
@@ -103,7 +97,6 @@ export interface Content {
   realtime: {
     title: string
     lead: string
-    detailsTitle: string
     pulse: CaseContent & { imageAlt: string }
     engine: CaseContent
   }
@@ -145,5 +138,28 @@ export interface Content {
     processTitle: string
     process: { name: string; text: string }[]
     footer: string
+  }
+  /** подписи карты системы и журнала событий */
+  system: {
+    note: string
+    hudTitle: string
+    live: string
+    session: string
+    events: string
+    pingHint: string
+    log: {
+      boot: string
+      move: string
+      click: string
+      lang: string
+      ping: string
+      pingText: string
+      lead: string
+      match: string
+      search: string
+      monitor: string
+      monitorStart: string
+      monitorDone: string
+    }
   }
 }
