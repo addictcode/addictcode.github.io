@@ -7,7 +7,8 @@ import {
   monitorSizes,
 } from '../content/demoData'
 import { useLang } from '../i18n/LangContext'
-import { DemoBadge } from '../components/Sheets'
+import { DemoBadge } from '../components/Links'
+import { emit } from '../system/bus'
 
 interface Listing {
   id: number
@@ -78,12 +79,23 @@ export function MonitorDemo() {
     setListings([])
     setFinished(false)
     setRunning(true)
+    emit({ kind: 'monitor', textKey: 'monitorStart', kick: ['bot'] })
   }
 
   const matches = listings.filter((l) => l.match)
+  const describe = (l: Listing) => `${m.items[l.item]} ${l.brand}, ${l.size}`
+
+  // совпадение и конец прогона уходят на карту и в журнал
+  const newest = listings[listings.length - 1]
+  const newestId = newest?.id
+  const newestText = newest?.match ? `${describe(newest)} · ${newest.price} ${monitorCurrency}` : ''
+  useEffect(() => {
+    if (newestText) emit({ kind: 'match', text: newestText, kick: ['bot'] })
+    if (newestId === monitorRunLength) emit({ kind: 'monitor', textKey: 'monitorDone' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- событие привязано к номеру объявления, а не к тексту
+  }, [newestId])
   const feed = listings.slice(-FEED_SIZE).reverse()
   const alerts = matches.slice(-ALERTS_SIZE).reverse()
-  const describe = (l: Listing) => `${m.items[l.item]} ${l.brand}, ${l.size}`
 
   return (
     <section className="monitor" aria-labelledby="monitor-title" data-demo="monitor">
@@ -139,6 +151,7 @@ export function MonitorDemo() {
           className="btn btn--solid monitor__run"
           onClick={running ? () => setRunning(false) : start}
           data-action="monitor-toggle"
+          data-log="off"
         >
           <span>{running ? m.stop : finished ? m.restart : m.start}</span>
         </button>

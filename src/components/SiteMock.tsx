@@ -1,5 +1,9 @@
-import { useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { useLang } from '../i18n/LangContext'
+import { emit } from '../system/bus'
+
+/** пауза после набора, прежде чем поиск попадёт в журнал */
+const LOG_DELAY_MS = 700
 
 const LATIN = "qwertyuiop[]asdfghjkl;'zxcvbnm,."
 const CYRILLIC = 'йцукенгшщзхъфывапролджэячсмитьбю'
@@ -20,6 +24,12 @@ export function SiteMock() {
   const fixed = fixLayout(raw)
   const matched = mock.catalog.filter((name) => name.includes(fixed) || name.includes(raw))
   const wasFixed = raw !== '' && fixed !== raw && matched.some((name) => name.includes(fixed))
+
+  useEffect(() => {
+    if (!wasFixed) return
+    const timer = window.setTimeout(() => emit({ kind: 'search', text: `${raw} → ${fixed}`, kick: ['site'] }), LOG_DELAY_MS)
+    return () => window.clearTimeout(timer)
+  }, [wasFixed, raw, fixed])
 
   return (
     <figure className="mock">
