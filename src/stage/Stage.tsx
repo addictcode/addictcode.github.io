@@ -1,15 +1,17 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
+import { useLang } from '../i18n/LangContext'
 import { hasWebGL, pickStageMode } from './capability'
-import { StaticStage } from './StaticStage'
+import { useActiveChapter } from './store'
+import { applyTheme } from './theme'
 import { useScrollChapter } from './useScrollChapter'
 
-const CubeCanvas = lazy(() => import('../scene/CubeCanvas'))
+const RibbonCanvas = lazy(() => import('../scene/RibbonCanvas'))
 
 const WAKE_EVENTS = ['pointerdown', 'pointermove', 'touchstart', 'wheel', 'keydown', 'scroll'] as const
 
 /**
- * Первое действие посетителя. До него статичный кадр неотличим от живой сцены,
- * поэтому тяжёлый чанк с three.js не мешает первой отрисовке и чтению.
+ * Первое действие посетителя. До него страница — статичные экраны с кадрами сцены,
+ * поэтому тяжёлый чанк с three.js не мешает первой отрисовке.
  * `?eager` грузит сцену сразу после загрузки страницы (для отладки и замеров).
  */
 function whenNeeded(run: () => void): () => void {
@@ -36,15 +38,21 @@ function whenNeeded(run: () => void): () => void {
 }
 
 /**
- * Фиксированный слой под текстом. Сначала всегда статичный кадр; живая сцена
- * и моушен подгружаются отдельными чанками при первом действии посетителя.
+ * Слой сцены. Статичная версия — обычные экраны друг под другом с кадрами лент.
+ * Живая версия закрепляет экраны, красит фон по скроллу и рисует ленты в canvas.
  */
 export function Stage() {
+  const { t } = useLang()
   const [mode, setMode] = useState(pickStageMode)
   const [load, setLoad] = useState(false)
   const [motionOn, setMotionOn] = useState(false)
-  const [ready, setReady] = useState(false)
+  const active = useActiveChapter()
   useScrollChapter(!motionOn)
+
+  // без моушена цвет шапки и навигации идёт за активной главой
+  useEffect(() => {
+    if (!motionOn) applyTheme(active)
+  }, [active, motionOn])
 
   useEffect(() => {
     if (mode !== 'live') return
@@ -67,15 +75,15 @@ export function Stage() {
       cancelled = true
       dispose?.()
       setMotionOn(false)
+      document.documentElement.removeAttribute('data-canvas')
     }
   }, [load])
 
   return (
-    <div className="stage" data-mode={mode} data-ready={ready || undefined}>
-      <StaticStage hidden={ready} />
+    <div className="stage" data-mode={mode}>
       {load && (
         <Suspense fallback={null}>
-          <CubeCanvas onReady={() => setReady(true)} />
+          <RibbonCanvas texts={t.ribbon} onReady={() => document.documentElement.setAttribute('data-canvas', '')} />
         </Suspense>
       )}
     </div>

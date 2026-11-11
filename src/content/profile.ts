@@ -1,6 +1,6 @@
 /** Контакты владельца. Telegram-ник меняется только здесь. */
 export const profile = {
-  telegram: 'CHANGE_ME',
+  telegram: 'heaphog',
   github: 'addictcode',
 } as const
 

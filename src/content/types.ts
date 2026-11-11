@@ -19,6 +19,8 @@ export interface CaseContent {
   /** остальное одной строкой, чтобы не раздувать список */
   more?: string
   stack: MetaRow[]
+  /** три коротких тезиса для плашки на экране; подробности открываются по кнопке */
+  points: string[]
 }
 
 export interface Content {
@@ -34,16 +36,24 @@ export interface Content {
     demo: string
     externalHint: string
     stageAlt: string
+    details: string
+    close: string
+    tryDemo: string
   }
   /** названия глав: подписи в навигации */
   chapters: string[]
   hero: {
     name: string
     role: string
-    title: string
+    /** строки крупного заголовка первого экрана */
+    lines: string[]
     phrase: string
     hint: string
   }
+  /** крупные слова на экранах глав, по одному на главу после первой */
+  words: string[]
+  /** надписи, которые бегут по 3D-лентам */
+  ribbon: { main: string; stack: string }
   site: CaseContent & {
     mock: {
       caption: string
@@ -93,6 +103,7 @@ export interface Content {
   realtime: {
     title: string
     lead: string
+    detailsTitle: string
     pulse: CaseContent & { imageAlt: string }
     engine: CaseContent
   }

@@ -16,15 +16,23 @@ export const ru: Content = {
     liveDemo: 'Живое демо',
     demo: 'Демо',
     externalHint: 'откроется в новой вкладке',
-    stageAlt: 'Фигура из кубиков',
+    stageAlt: 'Типографическая лента, скрученная в узел',
+    details: 'Подробнее',
+    close: 'Закрыть',
+    tryDemo: 'Демо: заявка → CRM',
   },
-  chapters: ['Начало', 'Сайт', 'Бот', 'CRM', 'Реальное время', 'Парсинг и LLM', 'Стек', 'Контакты'],
+  chapters: ['Начало', 'Сайт', 'Бот', 'CRM', 'Реальное время', 'Парсинг и LLM', 'Контакты'],
   hero: {
     name: 'Дмитрий Шайбаков',
     role: 'backend-разработчик',
-    title: 'Собираю сайты, ботов и CRM под задачу.',
-    phrase: 'Из одних и тех же деталей получается система, в которой заявка сама доходит от формы до результата.',
-    hint: 'Здесь 216 кубиков. На каждом проекте они складываются заново. Листайте, а по фигуре можно кликнуть.',
+    lines: ['Сайты.', 'Боты.', 'CRM.'],
+    phrase: 'Собираю под задачу системы, в которых заявка сама доходит от формы до результата.',
+    hint: 'Листайте: лента поедет. По ней можно кликнуть.',
+  },
+  words: ['Сайт', 'Бот', 'CRM', 'Live', 'Парсинг'],
+  ribbon: {
+    main: 'САЙТЫ ✕ БОТЫ ✕ CRM ✕ ПАРСЕРЫ ✕ LLM ✕ ',
+    stack: 'JAVA · SPRING BOOT · POSTGRESQL · REDIS · REACT · TYPESCRIPT · PYTHON · DOCKER · ',
   },
   site: {
     kicker: 'Коммерческий заказ · в продакшене · без названия',
@@ -38,6 +46,7 @@ export const ru: Content = {
     ],
     more: 'Ещё: кабинет дилера с персональными ценами и выгрузкой в Excel, 301-редиректы со старых адресов, разметка schema.org, SSL Labs A+, ежедневная сверка цен с поставщиком с уведомлениями в Telegram.',
     stack: [{ label: 'Стек', value: 'Next.js 16, React 19, TypeScript, Tailwind 4' }],
+    points: ['Каталог на 421 позицию', 'Поиск понимает «ghbdjl»', 'Откат админки на 40 версий'],
     mock: {
       caption: 'Схема нарисована кодом: название, домен и скриншоты не показываю. Поиск в ней работает, попробуйте набрать слово в английской раскладке.',
       searchLabel: 'Поиск по каталогу',
@@ -58,6 +67,7 @@ export const ru: Content = {
       { k: 'Живучесть', text: 'Пережил отключение JSON API площадки: переведён на чтение страницы каталога.' },
     ],
     stack: [{ label: 'Стек', value: 'Java 17, Spring Boot 3.2, PostgreSQL + Flyway, Jsoup, Docker' }],
+    points: ['Новые объявления за секунды', 'Тема форума под каждый поиск', 'Пережил отключение API площадки'],
     monitor: {
       title: 'Монитор объявлений',
       note: 'Скриншотов бота нет, вместо них симулятор. Объявления и бренды выдуманы, всё работает в браузере.',
@@ -95,6 +105,7 @@ export const ru: Content = {
       { label: 'Бэкенд', value: 'Java 25, Spring Boot 4.1, Spring Modulith, PostgreSQL + PostGIS, Flyway, JWT' },
       { label: 'Фронтенд', value: 'React 19, TypeScript, TanStack Router/Query, MapLibre, ECharts, клиент API из OpenAPI' },
     ],
+    points: ['От заявки до оплаты и аналитики', '15 модулей, у каждого своя схема', 'Двойную бронь не пропустит база'],
     pipelineLabel: 'Полный цикл заказа',
     pipeline: ['Заявка', 'Коммерческое предложение', 'Договор', 'Планирование бригад', 'Выполнение', 'Акт', 'Счёт', 'Оплата', 'Аналитика'],
     mock: {
@@ -108,6 +119,7 @@ export const ru: Content = {
   realtime: {
     title: 'Данные в реальном времени',
     lead: 'Два открытых проекта про поток событий: дашборд с алертами и очередь задач.',
+    detailsTitle: 'Pulse и distributed-task-engine',
     pulse: {
       kicker: 'Открытый код · живое демо',
       title: 'Pulse',
@@ -118,6 +130,7 @@ export const ru: Content = {
         { k: 'Качество', text: 'Нагрузочные тесты k6, бюджеты на размер и CLS в Playwright, 5 workflow в CI.' },
       ],
       stack: [{ label: 'Стек', value: 'Java 25, Spring Boot 4.1, PostgreSQL + Liquibase; TypeScript, Vite, Lightweight Charts, three.js' }],
+      points: ['Около 530 инструментов по WebSocket', 'Алерты в Telegram'],
       imageAlt: 'Обложка проекта Pulse: тёмный экран с сеткой сигналов',
     },
     engine: {
@@ -130,6 +143,7 @@ export const ru: Content = {
         { k: 'Дашборд', text: 'Состояние очереди приходит по STOMP.' },
       ],
       stack: [{ label: 'Стек', value: 'Java 21, Spring Boot 3.5, PostgreSQL, Redis' }],
+      points: ['Приоритеты, повторы, dead-letter', 'Дашборд по STOMP'],
     },
   },
   parsing: {
@@ -145,6 +159,7 @@ export const ru: Content = {
       { label: 'Бэкенд', value: 'Python 3.12, FastAPI, SQLAlchemy 2 async, Redis-очередь, aiogram 3' },
       { label: 'Фронтенд', value: 'React 18, TanStack Query/Virtual' },
     ],
+    points: ['Несколько площадок, одна база без дублей', 'Морфологический поиск', 'Релевантность оценивает LLM'],
     shots: [
       { alt: 'TenderRadar: список закупок в работе и карточка закупки', caption: 'В работе' },
       { alt: 'TenderRadar: итоги торгов и доля побед', caption: 'Итоги' },
@@ -210,7 +225,7 @@ export const ru: Content = {
   },
   contact: {
     title: 'Соберём под вашу задачу',
-    lead: 'Напишите в Telegram, что нужно сделать.',
+    lead: 'Напишите в Telegram, что нужно сделать. Отвечу, назову срок и стоимость.',
     takeTitle: 'Что беру в работу',
     take: ['Сайты с админкой и заявками', 'Telegram-боты', 'Парсеры и мониторинг', 'CRM и внутренние системы', 'Интеграции с LLM'],
     processTitle: 'Как идёт работа',
@@ -220,6 +235,6 @@ export const ru: Content = {
       { name: 'Сборка', text: 'Делаю и показываю промежуточный результат.' },
       { name: 'Сдача', text: 'Передаю рабочую систему: код, деплой, инструкция.' },
     ],
-    footer: 'Vite, React, three.js. Фигура собрана из 216 кубиков, без готовых моделей.',
+    footer: 'Vite, React, three.js. Ленты построены кодом, без готовых моделей.',
   },
 }
