@@ -1,10 +1,9 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
-import { useLang } from '../i18n/LangContext'
 import { hasWebGL, pickStageMode } from './capability'
 import { StaticStage } from './StaticStage'
-import { useScrollStation } from './useScrollStation'
+import { useScrollChapter } from './useScrollChapter'
 
-const ConveyorCanvas = lazy(() => import('../scene/ConveyorCanvas'))
+const CubeCanvas = lazy(() => import('../scene/CubeCanvas'))
 
 const WAKE_EVENTS = ['pointerdown', 'pointermove', 'touchstart', 'wheel', 'keydown', 'scroll'] as const
 
@@ -41,12 +40,11 @@ function whenNeeded(run: () => void): () => void {
  * и моушен подгружаются отдельными чанками при первом действии посетителя.
  */
 export function Stage() {
-  const { t } = useLang()
   const [mode, setMode] = useState(pickStageMode)
   const [load, setLoad] = useState(false)
   const [motionOn, setMotionOn] = useState(false)
   const [ready, setReady] = useState(false)
-  useScrollStation(!motionOn)
+  useScrollChapter(!motionOn)
 
   useEffect(() => {
     if (mode !== 'live') return
@@ -72,14 +70,12 @@ export function Stage() {
     }
   }, [load])
 
-  const stamps = t.stations.map((station) => station.stamp)
-
   return (
     <div className="stage" data-mode={mode} data-ready={ready || undefined}>
       <StaticStage hidden={ready} />
       {load && (
         <Suspense fallback={null}>
-          <ConveyorCanvas stamps={stamps} onReady={() => setReady(true)} />
+          <CubeCanvas onReady={() => setReady(true)} />
         </Suspense>
       )}
     </div>

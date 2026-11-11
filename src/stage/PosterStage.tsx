@@ -1,17 +1,14 @@
 import { lazy, Suspense } from 'react'
-import { useLang } from '../i18n/LangContext'
 
-const ConveyorCanvas = lazy(() => import('../scene/ConveyorCanvas'))
+const CubeCanvas = lazy(() => import('../scene/CubeCanvas'))
 
-/** Служебный режим `?poster=N`: только сцена на станции N, без текста. Из него снимаются постеры. */
-export function PosterStage({ station }: { station: number }) {
-  const { t } = useLang()
+/** Служебный режим `?poster=N`: только фигура главы N, без текста. Из него снимаются постеры. */
+export function PosterStage({ chapter }: { chapter: number }) {
   return (
     <div className="stage stage--poster">
       <Suspense fallback={null}>
-        <ConveyorCanvas
-          stamps={t.stations.map((s) => s.stamp)}
-          posterStation={station}
+        <CubeCanvas
+          posterChapter={chapter}
           onReady={() => document.documentElement.setAttribute('data-poster-ready', '')}
         />
       </Suspense>

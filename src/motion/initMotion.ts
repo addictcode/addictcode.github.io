@@ -7,13 +7,13 @@ import { setProgress } from '../stage/store'
 const easeTravel = gsap.parseEase('sine.inOut')
 
 /**
- * Привязка к скроллу: ScrollTrigger считает, сколько посылка проехала между станциями,
- * и ставит штампы на листах; Lenis сглаживает колесо мыши. Возвращает функцию очистки.
+ * Привязка к скроллу: ScrollTrigger считает, насколько фигура пересобралась между главами,
+ * и проявляет заголовки; Lenis сглаживает колесо мыши. Возвращает функцию очистки.
  */
 export function initMotion(): () => void {
   gsap.registerPlugin(ScrollTrigger)
   const context = gsap.context(() => {
-    const sections = gsap.utils.toArray<HTMLElement>('[data-station]')
+    const sections = gsap.utils.toArray<HTMLElement>('[data-chapter]')
     const travel = sections.map(() => 0)
     const publish = () => setProgress(travel.reduce((sum, t) => sum + easeTravel(t), 0))
 
@@ -23,21 +23,16 @@ export function initMotion(): () => void {
         travel[i] = self.progress
         publish()
       }
-      // посылка едет к станции, пока её секция поднимается от низа экрана к верху
+      // фигура пересобирается, пока секция главы поднимается от низа экрана к верху
       ScrollTrigger.create({ trigger: section, start: 'top 88%', end: 'top 14%', onUpdate: update, onRefresh: update })
     })
 
-    gsap.utils.toArray<HTMLElement>('[data-stamp]').forEach((stamp) => {
+    // номер главы и линия под заголовком проявляются по мере подъёма главы
+    gsap.utils.toArray<HTMLElement>('[data-reveal]').forEach((element) => {
       gsap.fromTo(
-        stamp,
-        { scale: 2.1, autoAlpha: 0, rotate: -19 },
-        {
-          scale: 1,
-          autoAlpha: 1,
-          rotate: -7,
-          ease: 'power3.in',
-          scrollTrigger: { trigger: stamp.parentElement, start: 'top 62%', end: 'top 34%', scrub: true },
-        },
+        element,
+        { '--reveal': 0 },
+        { '--reveal': 1, ease: 'none', scrollTrigger: { trigger: element, start: 'top 92%', end: 'top 55%', scrub: true } },
       )
     })
   })

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { leadFirstNumber, leadWeekSeed } from '../content/demoData'
 import { useLang } from '../i18n/LangContext'
 import { ArrowRight } from '../components/Icons'
-import { DemoBadge } from '../components/Sheet'
+import { DemoBadge } from '../components/Chapter'
 
 interface Lead {
   no: number
@@ -108,9 +108,7 @@ export function LeadDemo() {
           </label>
           <button type="submit" className="btn btn--solid" disabled={busy}>
             <span>{stage === 4 ? d.form.again : d.form.submit}</span>
-            <span className="btn__icon">
-              <ArrowRight />
-            </span>
+            <ArrowRight />
           </button>
         </form>
 

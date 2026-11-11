@@ -18,13 +18,6 @@ export function CrmMock() {
   return (
     <figure className="mock">
       <div className="mock__frame">
-        <div className="plan__roles mono" aria-hidden="true">
-          {mock.roles.map((role, i) => (
-            <span key={role} className={i === 2 ? 'is-on' : ''}>
-              {role}
-            </span>
-          ))}
-        </div>
         <p className="plan__title mono">{mock.title}</p>
         <div className="plan" aria-hidden="true">
           <span />

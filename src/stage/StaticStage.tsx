@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLang } from '../i18n/LangContext'
 import { getFraming, POSTER_UNITS } from './framing'
-import { useActiveStation } from './store'
+import { useActiveChapter } from './store'
 
 function useViewport() {
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight })
@@ -13,19 +13,19 @@ function useViewport() {
   return size
 }
 
-/** Статичный кадр сцены для активной станции: тот же ракурс, что у живой 3D-сцены. */
+/** Статичный кадр фигуры для активной главы: тот же ракурс, что у живой 3D-сцены. */
 export function StaticStage({ hidden = false }: { hidden?: boolean }) {
-  const { t, lang } = useLang()
-  const active = useActiveStation()
+  const { t } = useLang()
+  const active = useActiveChapter()
   const { w, h } = useViewport()
   const { zoom, anchorX, anchorY } = getFraming(w, h, active)
   const size = POSTER_UNITS * zoom
   return (
     <picture className="stage__poster" data-hidden={hidden || undefined}>
-      <source srcSet={`/posters/station-${active}-${lang}.avif`} type="image/avif" />
+      <source srcSet={`/posters/chapter-${active}.avif`} type="image/avif" />
       <img
-        src={`/posters/station-${active}-${lang}.webp`}
-        alt={`${t.ui.stageAlt}: ${t.stations[active].name}`}
+        src={`/posters/chapter-${active}.webp`}
+        alt={`${t.ui.stageAlt}: ${t.chapters[active]}`}
         width={size}
         height={size}
         decoding="async"

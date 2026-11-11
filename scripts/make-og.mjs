@@ -12,33 +12,22 @@ await page.goto(`${site.url}?static`, { waitUntil: 'networkidle' })
 
 await page.evaluate(() => {
   const text = (selector) => document.querySelector(selector).textContent
-  const [first, last] = [...document.querySelectorAll('.hero__name span')].map((el) => el.textContent)
   const card = document.createElement('div')
   card.className = 'og'
   card.innerHTML = `
     <style>
-      .og { position: fixed; inset: 0; z-index: 99; overflow: hidden; background: var(--paper);
-        background-image: radial-gradient(#15140f1f 1px, transparent 1.2px); background-size: 22px 22px; }
-      .og__strip { position: absolute; inset: 0 0 auto; display: flex; justify-content: space-between;
-        padding: 14px 48px; background: var(--ink); color: var(--sheet); font-size: 15px; }
-      .og__name { position: absolute; left: 48px; top: 92px; font-family: var(--font-display); font-weight: 900;
-        font-size: 166px; line-height: 0.84; text-transform: uppercase; }
-      .og__name span { display: block; }
-      .og__name span:last-child { color: transparent; -webkit-text-stroke: 3px var(--ink); }
-      .og__phrase { position: absolute; left: 48px; bottom: 50px; width: 520px; font-size: 27px; line-height: 1.3; }
-      .og img { position: absolute; right: -250px; top: -130px; width: 1000px; height: 1000px; }
-      .og__mark { position: absolute; right: 48px; bottom: 44px; padding: 8px 14px; background: var(--signal);
-        border: 2px solid var(--ink); font-size: 17px; }
+      .og { position: fixed; inset: 0; z-index: 99; overflow: hidden; background: var(--bg); }
+      .og__who { position: absolute; left: 64px; top: 60px; color: var(--muted); font-size: 17px; }
+      .og__title { position: absolute; left: 64px; top: 150px; width: 640px; font-size: 80px; line-height: 1.02; }
+      .og__phrase { position: absolute; left: 64px; bottom: 64px; width: 560px; font-size: 25px; line-height: 1.4; color: var(--muted); }
+      .og img { position: absolute; right: -40px; top: 15px; width: 600px; height: 600px; }
     </style>
-    <p class="og__strip mono"><span></span><span>addictcode.github.io</span></p>
-    <img src="/posters/station-0-ru.webp" alt="" />
-    <p class="og__name"><span></span><span></span></p>
-    <p class="og__phrase"></p>
-    <p class="og__mark mono">Telegram · GitHub</p>`
-  card.querySelector('.og__strip span').textContent = text('.hero__role')
-  const spans = card.querySelectorAll('.og__name span')
-  spans[0].textContent = first
-  spans[1].textContent = last
+    <p class="og__who mono"></p>
+    <img src="/posters/chapter-0.webp" alt="" />
+    <h1 class="og__title"></h1>
+    <p class="og__phrase"></p>`
+  card.querySelector('.og__who').textContent = text('.hero__who')
+  card.querySelector('.og__title').textContent = text('.hero h1')
   card.querySelector('.og__phrase').textContent = text('.hero__phrase')
   document.body.append(card)
 })

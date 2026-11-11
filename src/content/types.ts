@@ -1,7 +1,7 @@
 export type Lang = 'ru' | 'en'
 
 export interface Fact {
-  /** короткая метка слева, моноширинная */
+  /** короткая метка слева */
   k: string
   text: string
 }
@@ -15,23 +15,17 @@ export interface CaseContent {
   kicker: string
   title: string
   lead: string
-  meta: MetaRow[]
   facts: Fact[]
-}
-
-export interface StationInfo {
-  /** подпись в навигации и на вывеске станции */
-  name: string
-  /** текст штампа на посылке */
-  stamp: string
+  /** остальное одной строкой, чтобы не раздувать список */
+  more?: string
+  stack: MetaRow[]
 }
 
 export interface Content {
   meta: { title: string; description: string }
   ui: {
     skip: string
-    station: string
-    stationNav: string
+    chapterNav: string
     langSwitch: string
     telegram: string
     github: string
@@ -40,17 +34,15 @@ export interface Content {
     demo: string
     externalHint: string
     stageAlt: string
-    brand: string
   }
-  stations: StationInfo[]
+  /** названия глав: подписи в навигации */
+  chapters: string[]
   hero: {
-    firstName: string
-    lastName: string
+    name: string
     role: string
+    title: string
     phrase: string
-    label: MetaRow[]
     hint: string
-    tracking: string
   }
   site: CaseContent & {
     mock: {
@@ -58,9 +50,6 @@ export interface Content {
       searchLabel: string
       searchPlaceholder: string
       understood: string
-      nav: string[]
-      filters: string[]
-      item: string
       found: string
       empty: string
       catalog: string[]
@@ -99,7 +88,6 @@ export interface Content {
       crews: string[]
       days: string[]
       legend: string[]
-      roles: string[]
     }
   }
   realtime: {
@@ -136,20 +124,15 @@ export interface Content {
   skills: {
     title: string
     lead: string
-    containerLabel: string
-    containers: { code: string; name: string; items: string[] }[]
+    groups: { name: string; items: string[] }[]
   }
-  delivery: {
+  contact: {
     title: string
     lead: string
     takeTitle: string
     take: string[]
     processTitle: string
     process: { name: string; text: string }[]
-    contactTitle: string
-    telegramNote: string
-    githubNote: string
-    stamp: string
     footer: string
   }
 }

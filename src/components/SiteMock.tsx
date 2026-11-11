@@ -30,12 +30,6 @@ export function SiteMock() {
           <i />
           <span className="mock__url" />
         </div>
-        <div className="mock__nav mono" aria-hidden="true">
-          <b className="mock__logo" />
-          {mock.nav.map((item) => (
-            <span key={item}>{item}</span>
-          ))}
-        </div>
         <div className="mock__search">
           <label className="mono" htmlFor={inputId}>
             {mock.searchLabel}
@@ -53,11 +47,6 @@ export function SiteMock() {
             {wasFixed ? `${mock.understood}: «${fixed}» · ` : ''}
             {matched.length > 0 ? `${mock.found}: ${matched.length}` : mock.empty}
           </p>
-        </div>
-        <div className="mock__filters mono" aria-hidden="true">
-          {mock.filters.map((filter) => (
-            <span key={filter}>{filter}</span>
-          ))}
         </div>
         <ul className="mock__grid">
           {mock.catalog.map((name) => (

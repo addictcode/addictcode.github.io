@@ -1,14 +1,14 @@
-import { Header, StationRail } from './components/Header'
+import { ChapterRail, Header } from './components/Header'
 import { Hero } from './components/Hero'
 import {
-  BotStation,
-  CrmStation,
-  DispatchStation,
-  ParsingStation,
-  RealtimeStation,
-  SiteStation,
-  SortingStation,
-} from './components/Stations'
+  BotChapter,
+  ContactChapter,
+  CrmChapter,
+  ParsingChapter,
+  RealtimeChapter,
+  SiteChapter,
+  StackChapter,
+} from './components/Chapters'
 import { LangProvider, useLang } from './i18n/LangContext'
 import { PosterStage } from './stage/PosterStage'
 import { Stage } from './stage/Stage'
@@ -28,7 +28,7 @@ export default function App() {
   if (posterParam !== null) {
     return (
       <LangProvider>
-        <PosterStage station={Number(posterParam)} />
+        <PosterStage chapter={Number(posterParam)} />
       </LangProvider>
     )
   }
@@ -37,16 +37,16 @@ export default function App() {
       <SkipLink />
       <Stage />
       <Header />
-      <StationRail />
+      <ChapterRail />
       <main id="main">
         <Hero />
-        <SiteStation />
-        <BotStation />
-        <CrmStation />
-        <RealtimeStation />
-        <ParsingStation />
-        <SortingStation />
-        <DispatchStation />
+        <SiteChapter />
+        <BotChapter />
+        <CrmChapter />
+        <RealtimeChapter />
+        <ParsingChapter />
+        <StackChapter />
+        <ContactChapter />
       </main>
     </LangProvider>
   )

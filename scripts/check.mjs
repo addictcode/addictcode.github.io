@@ -1,11 +1,11 @@
 // Сквозная проверка собранного сайта в Chromium:
-// скриншоты 1440 и 375 px на каждой станции, горизонтальный скролл,
+// скриншоты 1440 и 375 px на каждой главе, горизонтальный скролл,
 // оба демо, переключатель языка, режимы без WebGL и с prefers-reduced-motion.
 // Запуск: npm run build && npm run check. Скриншоты ложатся в test-results/.
 import { mkdir } from 'node:fs/promises'
 import { launchBrowser, startSite } from './browser.mjs'
 
-const STATIONS = ['intake', 'site', 'bot', 'crm', 'realtime', 'parsing', 'sorting', 'dispatch']
+const CHAPTERS = ['intro', 'site', 'bot', 'crm', 'realtime', 'parsing', 'stack', 'contact']
 const OUT = 'test-results'
 const failures = []
 const ok = (condition, message) => {
@@ -29,13 +29,13 @@ async function open(options = {}, query = '') {
 }
 
 const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
-const scrollToStation = (page, id) =>
+const scrollToChapter = (page, id) =>
   page.evaluate((target) => {
     const top = document.getElementById(target).getBoundingClientRect().top + window.scrollY
-    window.scrollTo(0, target === 'intake' ? 0 : top - window.innerHeight * 0.1)
+    window.scrollTo(0, target === 'intro' ? 0 : top - window.innerHeight * 0.1)
   }, id)
 
-/* 1. Скриншоты станций и горизонтальный скролл */
+/* 1. Скриншоты глав и горизонтальный скролл */
 for (const [name, viewport] of [
   ['desktop-1440', { width: 1440, height: 900 }],
   ['mobile-375', { width: 375, height: 740 }],
@@ -44,12 +44,14 @@ for (const [name, viewport] of [
   const { context, page, errors } = await open({ viewport, deviceScaleFactor: 1, hasTouch: name.startsWith('mobile') })
   await page.waitForSelector('.stage[data-ready]', { timeout: 30000 }).catch(() => {})
   ok((await page.locator('.stage[data-ready]').count()) === 1, '3D-сцена отрисовалась')
-  for (const [index, id] of STATIONS.entries()) {
-    await scrollToStation(page, id)
+  for (const [index, id] of CHAPTERS.entries()) {
+    await scrollToChapter(page, id)
     await page.waitForTimeout(1300)
     await page.screenshot({ path: `${OUT}/${name}-${index}-${id}.png` })
-    const ticker = await page.locator('.topbar__no').textContent()
-    ok(ticker.startsWith(String(index).padStart(2, '0')), `станция ${index} (${id}): счётчик ${ticker}`)
+    if (name.startsWith('desktop')) {
+      const current = (await page.locator('.rail a[aria-current] .rail__no').textContent()).trim()
+      ok(current === String(index).padStart(2, '0'), `глава ${index} (${id}): в навигации активна ${current}`)
+    }
   }
   await page.locator('[data-demo="lead"]').scrollIntoViewIfNeeded()
   await page.waitForTimeout(600)
@@ -105,9 +107,9 @@ console.log('\nязык')
 {
   const { context, page } = await open()
   const cyrillic = /[А-Яа-яЁё]/
-  await page.locator('.langs__btn[lang="en"]').click()
+  await page.locator('.langs button[lang="en"]').click()
   await page.waitForTimeout(300)
-  // кириллица в EN-версии допустима только в примере раскладки («привод») и в каталоге макета
+  // кириллица в EN-версии допустима только в примере раскладки («привод») и в каталоге схемы
   const leftovers = await page.evaluate(() => {
     const walker = document.createTreeWalker(document.querySelector('#root'), NodeFilter.SHOW_TEXT)
     const found = []
@@ -150,12 +152,12 @@ for (const [name, options, init] of [
   await page.waitForTimeout(1500)
   ok((await page.locator('.stage[data-mode="static"]').count()) === 1, 'включилась статичная версия')
   ok((await page.locator('canvas').count()) === 0, 'canvas не создавался')
-  ok((await page.locator('main h2').count()) >= 8, 'все станции с текстом на месте')
+  ok((await page.locator('main h2').count()) >= 8 && (await page.locator('main h1').count()) === 1, 'все главы с текстом на месте')
   for (const id of ['site', 'parsing']) {
-    await scrollToStation(page, id)
+    await scrollToChapter(page, id)
     await page.waitForTimeout(500)
     const poster = await page.locator('.stage__poster img').evaluate((img) => img.complete && img.naturalWidth > 0)
-    ok(poster, `станция ${id}: статичный кадр загружен`)
+    ok(poster, `глава ${id}: статичный кадр загружен`)
     await page.screenshot({ path: `${OUT}/${name}-${id}.png` })
   }
   await context.close()
