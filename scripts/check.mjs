@@ -23,6 +23,8 @@ async function open(options = {}, query = '') {
   const errors = []
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto(site.url + query, { waitUntil: 'networkidle' })
+  // сцена грузится по первому действию посетителя: имитируем его
+  await page.evaluate(() => window.dispatchEvent(new Event('scroll')))
   return { context, page, errors }
 }
 
@@ -144,6 +146,7 @@ for (const [name, options, init] of [
   if (init) await context.addInitScript(init)
   const page = await context.newPage()
   await page.goto(site.url, { waitUntil: 'networkidle' })
+  await page.evaluate(() => window.dispatchEvent(new Event('scroll')))
   await page.waitForTimeout(1500)
   ok((await page.locator('.stage[data-mode="static"]').count()) === 1, 'включилась статичная версия')
   ok((await page.locator('canvas').count()) === 0, 'canvas не создавался')

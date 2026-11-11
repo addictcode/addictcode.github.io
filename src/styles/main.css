@@ -803,7 +803,6 @@ main {
 }
 
 .route li .mono {
-  opacity: 0.75;
   font-size: 0.66rem;
 }
 
@@ -1041,7 +1040,7 @@ main {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  opacity: 0.45;
+  opacity: 0.72;
 }
 
 .run__steps li span {

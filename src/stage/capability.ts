@@ -16,11 +16,17 @@ function isWeakDevice(): boolean {
   return typeof nav.hardwareConcurrency === 'number' && nav.hardwareConcurrency <= 2
 }
 
-/** Живая 3D-сцена или статичные постеры с тем же текстом. */
+/**
+ * Живая 3D-сцена или статичные постеры с тем же текстом.
+ * Дешёвые признаки проверяются сразу; WebGL — отдельно, перед загрузкой сцены,
+ * потому что создание контекста само по себе стоит времени.
+ */
 export function pickStageMode(): StageMode {
   const params = new URLSearchParams(location.search)
   if (params.has('static')) return 'static'
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return 'static'
   if (isWeakDevice() && !params.has('live')) return 'static'
-  return hasWebGL() ? 'live' : 'static'
+  return 'live'
 }
+
+export { hasWebGL }

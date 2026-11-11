@@ -3,7 +3,8 @@ import { useLang } from '../i18n/LangContext'
 import { LeadDemo } from '../demos/LeadDemo'
 import { MonitorDemo } from '../demos/MonitorDemo'
 import { CrmMock } from './CrmMock'
-import { ExternalLink, FactList, MetaList, pad2, Sheet, Station } from './Sheet'
+import { pad2 } from './format'
+import { ExternalLink, FactList, MetaList, Sheet, Station } from './Sheet'
 import { SiteMock } from './SiteMock'
 
 export function SiteStation() {

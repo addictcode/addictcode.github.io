@@ -2,7 +2,6 @@
 export const profile = {
   telegram: 'CHANGE_ME',
   github: 'addictcode',
-  siteUrl: 'https://addictcode.github.io',
 } as const
 
 export const telegramUrl = `https://t.me/${profile.telegram}`

@@ -3,7 +3,7 @@ import { telegramUrl } from '../content/profile'
 import { useLang } from '../i18n/LangContext'
 import { useActiveStation } from '../stage/store'
 import { PlaneIcon } from './Icons'
-import { pad2 } from './Sheet'
+import { pad2 } from './format'
 
 export function Header() {
   const { t, lang, setLang } = useLang()

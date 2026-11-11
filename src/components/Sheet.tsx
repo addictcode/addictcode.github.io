@@ -4,8 +4,7 @@ import type { Fact, MetaRow } from '../content/types'
 import { useLang } from '../i18n/LangContext'
 import { ArrowOut } from './Icons'
 import { Barcode } from './Barcode'
-
-export const pad2 = (n: number) => String(n).padStart(2, '0')
+import { pad2 } from './format'
 
 interface StationProps {
   index: number

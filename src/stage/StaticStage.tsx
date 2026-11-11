@@ -29,6 +29,7 @@ export function StaticStage({ hidden = false }: { hidden?: boolean }) {
         width={size}
         height={size}
         decoding="async"
+        fetchPriority={active === 0 ? 'high' : 'auto'}
         style={{ left: anchorX - size / 2, top: anchorY - size / 2, width: size, height: size }}
       />
     </picture>

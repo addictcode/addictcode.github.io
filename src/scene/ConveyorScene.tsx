@@ -92,7 +92,6 @@ export function ConveyorScene({ stamps, posterStation, onReady }: SceneProps) {
   )
   const dashBuilt = useMemo(() => build([{ at: [0, 0, 0], size: [0.09, 0.012, 2.1], color: '#55514a' }]), [])
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const label = useMemo(labelTexture, [fontTick])
   const signs = useMemo(
     () => Array.from({ length: STATIONS }, (_, i) => signTexture(i)),
