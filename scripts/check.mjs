@@ -5,7 +5,7 @@
 import { mkdir } from 'node:fs/promises'
 import { launchBrowser, startSite } from './browser.mjs'
 
-const CHAPTERS = ['intro', 'site', 'bot', 'crm', 'realtime', 'parsing', 'stack', 'contact']
+const CHAPTERS = ['intro', 'site', 'bot', 'crm', 'realtime', 'parsing', 'contact']
 const OUT = 'test-results'
 const failures = []
 const ok = (condition, message) => {
@@ -32,7 +32,7 @@ const overflow = (page) => page.evaluate(() => document.documentElement.scrollWi
 const scrollToChapter = (page, id) =>
   page.evaluate((target) => {
     const top = document.getElementById(target).getBoundingClientRect().top + window.scrollY
-    window.scrollTo(0, target === 'intro' ? 0 : top - window.innerHeight * 0.1)
+    window.scrollTo(0, top)
   }, id)
 
 /* 1. Скриншоты глав и горизонтальный скролл */
@@ -42,8 +42,8 @@ for (const [name, viewport] of [
 ]) {
   console.log(`\n${name}`)
   const { context, page, errors } = await open({ viewport, deviceScaleFactor: 1, hasTouch: name.startsWith('mobile') })
-  await page.waitForSelector('.stage[data-ready]', { timeout: 30000 }).catch(() => {})
-  ok((await page.locator('.stage[data-ready]').count()) === 1, '3D-сцена отрисовалась')
+  await page.waitForSelector('html[data-canvas]', { timeout: 30000 }).catch(() => {})
+  ok((await page.locator('html[data-canvas]').count()) === 1, '3D-сцена отрисовалась')
   for (const [index, id] of CHAPTERS.entries()) {
     await scrollToChapter(page, id)
     await page.waitForTimeout(1300)
@@ -53,9 +53,12 @@ for (const [name, viewport] of [
       ok(current === String(index).padStart(2, '0'), `глава ${index} (${id}): в навигации активна ${current}`)
     }
   }
-  await page.locator('[data-demo="lead"]').scrollIntoViewIfNeeded()
-  await page.waitForTimeout(600)
-  await page.screenshot({ path: `${OUT}/${name}-demo-lead.png` })
+  const visible = await page.locator(`#${CHAPTERS[CHAPTERS.length - 1]} .plate`).isVisible()
+  ok(visible, 'последний экран виден после прокрутки')
+  await page.locator('#contact [data-open="contact"]').click()
+  await page.waitForTimeout(500)
+  await page.screenshot({ path: `${OUT}/${name}-sheet.png` })
+  await page.locator('.sheet__close').click()
   ok((await overflow(page)) <= 0, 'нет горизонтального скролла')
   ok(errors.length === 0, `нет ошибок в консоли ${errors.join(' | ')}`)
   await context.close()
@@ -65,6 +68,9 @@ for (const [name, viewport] of [
 console.log('\nдемо: монитор объявлений')
 {
   const { context, page } = await open()
+  await scrollToChapter(page, 'bot')
+  await page.waitForTimeout(1500)
+  await page.locator('#bot [data-open="bot"]').click()
   const demo = page.locator('[data-demo="monitor"]')
   await demo.scrollIntoViewIfNeeded()
   await demo.locator('[data-field="brand"]').selectOption({ index: 2 })
@@ -85,6 +91,7 @@ console.log('\nдемо: монитор объявлений')
 console.log('\nдемо: заявка → бот → CRM → дашборд')
 {
   const { context, page } = await open()
+  await page.locator('#intro [data-open="lead"]').click()
   const demo = page.locator('[data-demo="lead"]')
   await demo.scrollIntoViewIfNeeded()
   const before = Number(await demo.locator('[data-kpi="total"]').textContent())
@@ -123,7 +130,12 @@ console.log('\nязык')
   ok(allowed.length === 0, `в EN-версии не осталось русского текста ${allowed.slice(0, 5).join(' | ')}`)
   ok((await page.getAttribute('html', 'lang')) === 'en', 'html lang = en')
   ok(!cyrillic.test(await page.title()), 'заголовок вкладки на английском')
-  await page.screenshot({ path: `${OUT}/lang-en.png` })
+  await scrollToChapter(page, 'site')
+  await page.waitForTimeout(1500)
+  await page.locator('#site [data-open="site"]').click()
+  await page.waitForTimeout(300)
+  await page.screenshot({ path: `${OUT}/lang-en-sheet.png` })
+  await page.locator('.sheet__close').click()
   await page.reload({ waitUntil: 'networkidle' })
   ok((await page.getAttribute('html', 'lang')) === 'en', 'выбор языка запомнился после перезагрузки')
   await context.close()
@@ -150,13 +162,13 @@ for (const [name, options, init] of [
   await page.goto(site.url, { waitUntil: 'networkidle' })
   await page.evaluate(() => window.dispatchEvent(new Event('scroll')))
   await page.waitForTimeout(1500)
-  ok((await page.locator('.stage[data-mode="static"]').count()) === 1, 'включилась статичная версия')
+  ok((await page.locator('html[data-live]').count()) === 0, 'включилась статичная версия')
   ok((await page.locator('canvas').count()) === 0, 'canvas не создавался')
-  ok((await page.locator('main h2').count()) >= 8 && (await page.locator('main h1').count()) === 1, 'все главы с текстом на месте')
+  ok((await page.locator('main h2').count()) === 6 && (await page.locator('main h1').count()) === 1, 'все главы с текстом на месте')
   for (const id of ['site', 'parsing']) {
     await scrollToChapter(page, id)
     await page.waitForTimeout(500)
-    const poster = await page.locator('.stage__poster img').evaluate((img) => img.complete && img.naturalWidth > 0)
+    const poster = await page.locator(`#${id} .frame__poster img`).evaluate((img) => img.complete && img.naturalWidth > 0)
     ok(poster, `глава ${id}: статичный кадр загружен`)
     await page.screenshot({ path: `${OUT}/${name}-${id}.png` })
   }

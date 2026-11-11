@@ -36,8 +36,10 @@ export function ChapterRail() {
         {t.chapters.map((name, i) => (
           <li key={chapterIds[i]}>
             <a href={`#${chapterIds[i]}`} aria-current={i === active ? 'step' : undefined}>
-              <span className="rail__name">{name}</span>
-              <span className="rail__no mono">{pad2(i)}</span>
+              <span className="visually-hidden">{name}</span>
+              <span className="rail__no mono" aria-hidden="true">
+                {pad2(i)}
+              </span>
             </a>
           </li>
         ))}

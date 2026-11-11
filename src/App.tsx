@@ -1,14 +1,6 @@
+import { Frames } from './components/Frames'
 import { ChapterRail, Header } from './components/Header'
-import { Hero } from './components/Hero'
-import {
-  BotChapter,
-  ContactChapter,
-  CrmChapter,
-  ParsingChapter,
-  RealtimeChapter,
-  SiteChapter,
-  StackChapter,
-} from './components/Chapters'
+import { SheetProvider } from './components/Sheets'
 import { LangProvider, useLang } from './i18n/LangContext'
 import { PosterStage } from './stage/PosterStage'
 import { Stage } from './stage/Stage'
@@ -34,20 +26,15 @@ export default function App() {
   }
   return (
     <LangProvider>
-      <SkipLink />
-      <Stage />
-      <Header />
-      <ChapterRail />
-      <main id="main">
-        <Hero />
-        <SiteChapter />
-        <BotChapter />
-        <CrmChapter />
-        <RealtimeChapter />
-        <ParsingChapter />
-        <StackChapter />
-        <ContactChapter />
-      </main>
+      <SheetProvider>
+        <SkipLink />
+        <Stage />
+        <Header />
+        <ChapterRail />
+        <main id="main">
+          <Frames />
+        </main>
+      </SheetProvider>
     </LangProvider>
   )
 }

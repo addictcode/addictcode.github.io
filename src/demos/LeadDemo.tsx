@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { leadFirstNumber, leadWeekSeed } from '../content/demoData'
 import { useLang } from '../i18n/LangContext'
 import { ArrowRight } from '../components/Icons'
-import { DemoBadge } from '../components/Chapter'
+import { DemoBadge } from '../components/Sheets'
 
 interface Lead {
   no: number
@@ -53,12 +53,11 @@ export function LeadDemo() {
   const total = week.reduce((sum, n) => sum + n, 0)
 
   return (
-    <section className="run" aria-labelledby="run-title" data-solid data-demo="lead" data-stage={stage}>
+    <section className="run" data-demo="lead" data-stage={stage}>
       <header className="run__head">
         <DemoBadge />
-        <h2 id="run-title">{d.title}</h2>
         <p>{d.intro}</p>
-        <p className="run__disclaimer mono">{d.disclaimer}</p>
+        <p className="run__disclaimer">{d.disclaimer}</p>
       </header>
 
       <ol className="run__steps mono" aria-hidden="true">

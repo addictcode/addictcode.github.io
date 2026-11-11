@@ -1,6 +1,6 @@
-# Портфолио «Кубики»
+# Портфолио «Лента»
 
-Личный сайт Дмитрия Шайбакова: одна фигура из 216 кубиков, которая на скролле пересобирается под каждый проект. Адрес: https://addictcode.github.io
+Личный сайт Дмитрия Шайбакова. Семь экранов-плакатов: фон меняет цвет, в центре типографические 3D-ленты, которые бегут и скручиваются от скролла, подробности кейсов и демо открываются в выезжающей панели. Адрес: https://addictcode.github.io
 
 Стек: Vite, React, TypeScript, three.js через `@react-three/fiber` и `@react-three/drei`, GSAP ScrollTrigger, Lenis.
 
@@ -20,14 +20,16 @@ npm run lint
 
 | Что | Где |
 |---|---|
-| Telegram-ник | `src/content/profile.ts`, поле `telegram` (сейчас `CHANGE_ME`). Ссылка `https://t.me/<ник>` собирается из него |
+| Telegram-ник | `src/content/profile.ts`, поле `telegram`. Ссылка `https://t.me/<ник>` собирается из него |
 | GitHub и ссылки на проекты | `src/content/profile.ts` |
 | Тексты на русском | `src/content/ru.ts` |
 | Тексты на английском | `src/content/en.ts` |
 | Выдуманные данные демо | `src/content/demoData.ts` |
 | Заголовок и описание для соцсетей | `index.html` (og-теги) и `meta` в `ru.ts` / `en.ts` |
-| Цвета и шрифты | переменные в начале `src/styles/main.css` |
-| Формы, в которые складываются кубики | `src/scene/formations.ts` |
+| Цвета экранов | `src/stage/theme.ts` |
+| Шрифты и цвета панели | переменные в `src/styles/main.css` |
+| Надписи на лентах | `ribbon` в `ru.ts` / `en.ts` |
+| Узлы, в которые скручиваются ленты | `src/scene/curves.ts` |
 | Имя и подпись в шапке и на первом экране | `hero` в `ru.ts` / `en.ts` |
 
 В компонентах текстов нет: всё лежит в `src/content/`. Структура описана типом `Content` в `src/content/types.ts`, поэтому забытый перевод не пройдёт проверку типов.
@@ -39,12 +41,12 @@ npm run lint
 ```bash
 npm run images     # assets-src/ → public/img/*.webp и *.avif
 npm run build
-npm run posters    # кадры фигуры для каждой главы → public/posters/
+npm run posters    # кадры лент для каждой главы, RU и EN → public/posters/
 npm run og         # OG-картинка и PNG-иконки → public/
 npm run build
 ```
 
-`posters` и `og` снимают собранный сайт в Chromium через Playwright, поэтому перед ними нужна свежая сборка, а после них ещё одна. Запускать их нужно, если менялась 3D-сцена или тексты первого экрана. Playwright берётся из проекта или из глобальной установки (`npm i -g playwright && npx playwright install chromium`).
+`posters` и `og` снимают собранный сайт в Chromium через Playwright, поэтому перед ними нужна свежая сборка, а после них ещё одна. Запускать их нужно, если менялась 3D-сцена, надписи на лентах, цвета или тексты первого экрана. Playwright берётся из проекта или из глобальной установки (`npm i -g playwright && npx playwright install chromium`).
 
 Постеры — это статичная версия сайта. Её видят посетители без WebGL, на слабых устройствах и с включённым `prefers-reduced-motion`; текст у неё тот же. Эти же кадры показываются всем до первого действия: чанк с three.js подгружается при первом скролле, касании или движении мыши. Принудительно включить режимы можно параметрами `?static` (только постеры) и `?eager` (сцена сразу после загрузки).
 

@@ -7,7 +7,7 @@ import {
   monitorSizes,
 } from '../content/demoData'
 import { useLang } from '../i18n/LangContext'
-import { DemoBadge } from '../components/Chapter'
+import { DemoBadge } from '../components/Sheets'
 
 interface Listing {
   id: number
