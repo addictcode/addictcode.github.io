@@ -1,32 +1,32 @@
 import { chapterIds, languages } from '../content'
 import { telegramUrl } from '../content/profile'
 import { useLang } from '../i18n/LangContext'
-import { clearLog, emit } from '../system/bus'
-import { useActiveChapter } from '../system/progress'
-import { pad2 } from './format'
+import { emit } from '../system/bus'
+import { useChapter } from '../system/view'
+
+const PROJECTS = [1, 2, 3, 4, 5]
 
 export function Header() {
   const { t, lang, setLang } = useLang()
-  const active = useActiveChapter()
+  const current = useChapter()
 
   const switchLang = (code: typeof lang) => {
     if (code === lang) return
     setLang(code)
-    clearLog()
-    emit({ kind: 'lang', text: code.toUpperCase(), broadcast: true })
+    emit({ broadcast: true })
   }
 
   return (
     <header className="topbar">
-      <a className="topbar__brand" href="#intro">
+      <a className="topbar__brand" href="#/" data-log="off">
         {t.hero.name}
       </a>
-      <nav className="topbar__nav mono" aria-label={t.ui.chapterNav}>
+      <nav className="topbar__nav mono" aria-label={t.ui.projects}>
         <ol>
-          {t.chapters.map((name, i) => (
-            <li key={chapterIds[i]}>
-              <a href={`#${chapterIds[i]}`} aria-current={i === active ? 'step' : undefined} data-log="off">
-                <span aria-hidden="true">{pad2(i)}</span> {name}
+          {PROJECTS.map((chapter) => (
+            <li key={chapter}>
+              <a href={`#/${chapterIds[chapter]}`} aria-current={chapter === current ? 'page' : undefined} data-log="off">
+                {t.chapters[chapter]}
               </a>
             </li>
           ))}

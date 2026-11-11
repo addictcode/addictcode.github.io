@@ -2,7 +2,7 @@ import { useEffect, useId, useState } from 'react'
 import { useLang } from '../i18n/LangContext'
 import { emit } from '../system/bus'
 
-/** пауза после набора, прежде чем поиск попадёт в журнал */
+/** пауза после набора, прежде чем поиск отзовётся на карте */
 const LOG_DELAY_MS = 700
 
 const LATIN = "qwertyuiop[]asdfghjkl;'zxcvbnm,."
@@ -27,9 +27,9 @@ export function SiteMock() {
 
   useEffect(() => {
     if (!wasFixed) return
-    const timer = window.setTimeout(() => emit({ kind: 'search', text: `${raw} → ${fixed}`, kick: ['site'] }), LOG_DELAY_MS)
+    const timer = window.setTimeout(() => emit({ kick: ['site'], route: ['client', 'site'] }), LOG_DELAY_MS)
     return () => window.clearTimeout(timer)
-  }, [wasFixed, raw, fixed])
+  }, [wasFixed, fixed])
 
   return (
     <figure className="mock">

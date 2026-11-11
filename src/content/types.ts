@@ -34,8 +34,11 @@ export interface Content {
     demo: string
     externalHint: string
     stageAlt: string
-    tryDemo: string
-    node: string
+    more: string
+    close: string
+    back: string
+    projects: string
+    openProject: string
   }
   /** названия глав: подписи в навигации */
   chapters: string[]
@@ -44,9 +47,8 @@ export interface Content {
     role: string
     title: string
     phrase: string
-    /** подсказка про карту: для экрана с картой справа и для телефона */
+    cta: string
     hint: string
-    hintTouch: string
   }
   site: CaseContent & {
     mock: {
@@ -133,33 +135,13 @@ export interface Content {
   contact: {
     title: string
     lead: string
-    takeTitle: string
-    take: string[]
-    processTitle: string
-    process: { name: string; text: string }[]
+    stackLabel: string
     footer: string
   }
-  /** подписи карты системы и журнала событий */
-  system: {
-    note: string
-    hudTitle: string
-    live: string
-    session: string
-    events: string
-    pingHint: string
-    log: {
-      boot: string
-      move: string
-      click: string
-      lang: string
-      ping: string
-      pingText: string
-      lead: string
-      match: string
-      search: string
-      monitor: string
-      monitorStart: string
-      monitorDone: string
-    }
+  /** услуги: порядок совпадает с `OFFER_CHAPTER` в `src/system/graph.ts` */
+  offer: {
+    title: string
+    hint: string
+    items: { name: string; text: string }[]
   }
 }

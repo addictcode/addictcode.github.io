@@ -79,21 +79,18 @@ export function MonitorDemo() {
     setListings([])
     setFinished(false)
     setRunning(true)
-    emit({ kind: 'monitor', textKey: 'monitorStart', kick: ['bot'] })
+    emit({ kick: ['bot'] })
   }
 
   const matches = listings.filter((l) => l.match)
   const describe = (l: Listing) => `${m.items[l.item]} ${l.brand}, ${l.size}`
 
-  // совпадение и конец прогона уходят на карту и в журнал
+  // совпадение отзывается на узле бота
   const newest = listings[listings.length - 1]
-  const newestId = newest?.id
-  const newestText = newest?.match ? `${describe(newest)} · ${newest.price} ${monitorCurrency}` : ''
+  const matchId = newest?.match ? newest.id : 0
   useEffect(() => {
-    if (newestText) emit({ kind: 'match', text: newestText, kick: ['bot'] })
-    if (newestId === monitorRunLength) emit({ kind: 'monitor', textKey: 'monitorDone' })
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- событие привязано к номеру объявления, а не к тексту
-  }, [newestId])
+    if (matchId) emit({ kick: ['bot'], route: ['site', 'bot'] })
+  }, [matchId])
   const feed = listings.slice(-FEED_SIZE).reverse()
   const alerts = matches.slice(-ALERTS_SIZE).reverse()
 

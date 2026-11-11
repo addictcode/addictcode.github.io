@@ -34,3 +34,11 @@ export function PlaneIcon() {
     </svg>
   )
 }
+
+export function ArrowLeft() {
+  return (
+    <svg {...base}>
+      <path d="M14 8H3M7 4 3 8l4 4" />
+    </svg>
+  )
+}

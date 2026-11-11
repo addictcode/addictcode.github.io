@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { useLang } from '../i18n/LangContext'
 import { hasWebGL, pickStageMode } from '../system/capability'
-import { useActiveChapter } from '../system/progress'
+import { useChapter } from '../system/view'
+import { Hotspots } from './Hotspots'
 
 const SystemCanvas = lazy(() => import('../scene/SystemCanvas'))
 
@@ -57,7 +58,7 @@ export function Stage() {
   const [mode, setMode] = useState(pickStageMode)
   const [load, setLoad] = useState(false)
   const [ready, setReady] = useState(false)
-  const active = useActiveChapter()
+  const active = useChapter() ?? 0
 
   useEffect(() => {
     if (mode !== 'live') return
@@ -74,6 +75,7 @@ export function Stage() {
   return (
     <div className="stage" data-mode={mode} data-ready={ready || undefined}>
       {!ready && <Poster chapter={active} />}
+      {ready && <Hotspots />}
       {load && (
         <Suspense fallback={null}>
           <SystemCanvas onReady={() => setReady(true)} />
