@@ -133,7 +133,7 @@ export const SHOTS: Shot[] = [
 ]
 
 /** Общий вид карты на главной, когда посетитель долистал до блока с услугами: карта по центру, ближе и круче сверху. */
-export const EXPLORE_SHOT: Shot = { x: 0.8, z: -0.4, dist: 58, azimuth: 8, polar: 30, narrow: 1.7 }
+export const EXPLORE_SHOT: Shot = { x: -1.3, z: -0.4, dist: 58, azimuth: 8, polar: 30, narrow: 1.7 }
 
 /** Какую главу открывает узел по клику. */
 export const NODE_CHAPTER: Record<NodeId, number> = {
