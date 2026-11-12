@@ -29,53 +29,119 @@ interface NodeDef {
   label: string
 }
 
+/**
+ * Карта разложена по пяти колонкам-дорожкам, как схема архитектуры:
+ * слева вход, справа то, что система отдаёт наружу. Узлы стоят на сетке
+ * с шагом 10–12, связи идут шинами по рядам и колонкам.
+ */
+const COL = { ingress: -22, interfaces: -10, core: 2, workers: 12, outputs: 22 } as const
+const ROW = { top: -11, bus: -2, data: 7, bottom: 15 } as const
+
 export const NODES: Record<NodeId, NodeDef> = {
-  client: { x: -10, z: 5, label: 'client' },
-  site: { x: -5, z: 1, label: 'site' },
-  bot: { x: 0, z: 6, label: 'bot' },
-  crm: { x: 2, z: -1, label: 'crm' },
-  db: { x: 7, z: 3, label: 'postgres' },
-  stream: { x: 9, z: -4, label: 'stream' },
-  queue: { x: 14.5, z: 1.5, label: 'queue' },
-  parser: { x: -6, z: -7, label: 'parser' },
-  llm: { x: 2, z: -7, label: 'llm' },
-  booking: { x: 5, z: 11, label: 'booking' },
-  shop: { x: -5, z: 11, label: 'shop' },
-  assistant: { x: 9, z: -10, label: 'assistant' },
-  sync: { x: -11, z: -2, label: 'crm-sync' },
-  prices: { x: -13, z: -7, label: 'prices' },
-  billing: { x: 13, z: 8, label: 'billing' },
+  client: { x: COL.ingress, z: ROW.bus, label: 'client' },
+  site: { x: COL.interfaces, z: ROW.bus, label: 'site' },
+  bot: { x: COL.interfaces, z: ROW.data, label: 'bot' },
+  crm: { x: COL.core, z: ROW.bus, label: 'crm' },
+  db: { x: COL.core, z: ROW.data, label: 'postgres' },
+  stream: { x: COL.outputs, z: ROW.data, label: 'stream' },
+  queue: { x: COL.workers, z: ROW.data, label: 'queue' },
+  parser: { x: COL.workers, z: ROW.top, label: 'parser' },
+  llm: { x: COL.workers, z: ROW.bus, label: 'llm' },
+  booking: { x: COL.interfaces + 4, z: ROW.bottom, label: 'booking' },
+  shop: { x: COL.interfaces - 4, z: ROW.bottom, label: 'shop' },
+  assistant: { x: COL.outputs, z: ROW.bus, label: 'assistant' },
+  sync: { x: COL.interfaces, z: ROW.top, label: 'crm-sync' },
+  prices: { x: COL.outputs, z: ROW.top, label: 'prices' },
+  billing: { x: COL.core, z: ROW.bottom, label: 'billing' },
 }
 
-type Point = [x: number, z: number]
+export type Point = [x: number, z: number]
 
 interface EdgeDef {
   from: NodeId
   to: NodeId
-  /** ломаная под прямыми углами, от узла к узлу */
+  /** ломаная под прямыми углами от узла к узлу; углы скашиваются в `edgePoints` */
   path: Point[]
 }
 
 const at = (id: NodeId): Point => [NODES[id].x, NODES[id].z]
+/** развилка под ботом: от неё связи расходятся к записи и магазину */
+const FORK = ROW.data + 4
 
 export const EDGES: EdgeDef[] = [
-  { from: 'client', to: 'site', path: [at('client'), [-5, 5], at('site')] },
-  { from: 'site', to: 'bot', path: [at('site'), [-2.5, 1], [-2.5, 6], at('bot')] },
-  { from: 'site', to: 'crm', path: [at('site'), [-5, -1], at('crm')] },
-  { from: 'bot', to: 'crm', path: [at('bot'), [2, 6], at('crm')] },
-  { from: 'crm', to: 'db', path: [at('crm'), [4.5, -1], [4.5, 3], at('db')] },
-  { from: 'crm', to: 'stream', path: [at('crm'), [4.5, -1], [4.5, -4], at('stream')] },
-  { from: 'db', to: 'queue', path: [at('db'), [14.5, 3], at('queue')] },
-  { from: 'queue', to: 'stream', path: [at('queue'), [14.5, -4], at('stream')] },
-  { from: 'parser', to: 'llm', path: [at('parser'), at('llm')] },
+  { from: 'client', to: 'site', path: [at('client'), at('site')] },
+  { from: 'client', to: 'bot', path: [at('client'), [COL.ingress, ROW.data], at('bot')] },
+  { from: 'site', to: 'sync', path: [at('site'), at('sync')] },
+  { from: 'site', to: 'bot', path: [at('site'), at('bot')] },
+  { from: 'site', to: 'crm', path: [at('site'), at('crm')] },
+  { from: 'bot', to: 'db', path: [at('bot'), at('db')] },
+  { from: 'crm', to: 'db', path: [at('crm'), at('db')] },
   { from: 'llm', to: 'crm', path: [at('llm'), at('crm')] },
-  { from: 'bot', to: 'booking', path: [at('bot'), [0, 8.5], [5, 8.5], at('booking')] },
-  { from: 'bot', to: 'shop', path: [at('bot'), [0, 8.5], [-5, 8.5], at('shop')] },
-  { from: 'llm', to: 'assistant', path: [at('llm'), [2, -10], at('assistant')] },
-  { from: 'site', to: 'sync', path: [at('site'), [-8, 1], [-8, -2], at('sync')] },
+  { from: 'parser', to: 'llm', path: [at('parser'), at('llm')] },
   { from: 'parser', to: 'prices', path: [at('parser'), at('prices')] },
-  { from: 'db', to: 'billing', path: [at('db'), [7, 8], at('billing')] },
+  { from: 'llm', to: 'assistant', path: [at('llm'), at('assistant')] },
+  { from: 'db', to: 'queue', path: [at('db'), at('queue')] },
+  { from: 'queue', to: 'stream', path: [at('queue'), at('stream')] },
+  { from: 'db', to: 'billing', path: [at('db'), at('billing')] },
+  { from: 'bot', to: 'booking', path: [at('bot'), [COL.interfaces, FORK], [NODES.booking.x, FORK], at('booking')] },
+  { from: 'bot', to: 'shop', path: [at('bot'), [COL.interfaces, FORK], [NODES.shop.x, FORK], at('shop')] },
 ]
+
+/** насколько скашивается угол ломаной */
+const CHAMFER = 1.4
+
+/** Точки связи со скошенными углами: по ним рисуется дорожка и идут пакеты. */
+export function edgePoints(path: Point[]): Point[] {
+  const out: Point[] = [path[0]]
+  for (let i = 1; i < path.length - 1; i += 1) {
+    const [px, pz] = path[i - 1]
+    const [cx, cz] = path[i]
+    const [nx, nz] = path[i + 1]
+    const inLength = Math.hypot(cx - px, cz - pz)
+    const outLength = Math.hypot(nx - cx, nz - cz)
+    const r = Math.min(CHAMFER, inLength / 2, outLength / 2)
+    out.push([cx - ((cx - px) / inLength) * r, cz - ((cz - pz) / inLength) * r])
+    out.push([cx + ((nx - cx) / outLength) * r, cz + ((nz - cz) / outLength) * r])
+  }
+  out.push(path[path.length - 1])
+  return out
+}
+
+/** Точка на ломаной на расстоянии `dist` от начала. */
+export function pointAlong(points: Point[], dist: number): Point {
+  let rest = dist
+  for (let i = 0; i < points.length - 1; i += 1) {
+    const [ax, az] = points[i]
+    const [bx, bz] = points[i + 1]
+    const length = Math.hypot(bx - ax, bz - az)
+    if (rest <= length || i === points.length - 2) {
+      const f = length === 0 ? 0 : Math.min(1, rest / length)
+      return [ax + (bx - ax) * f, az + (bz - az) * f]
+    }
+    rest -= length
+  }
+  return points[points.length - 1]
+}
+
+export const pathLength = (points: Point[]): number =>
+  points.slice(1).reduce((sum, [x, z], i) => sum + Math.hypot(x - points[i][0], z - points[i][1]), 0)
+
+/** Колонки-дорожки карты: границы по x и подпись, напечатанная на «полу» у дальнего края. */
+export interface Lane {
+  from: number
+  to: number
+  label: string
+}
+
+export const LANES: Lane[] = [
+  { from: -27, to: -16, label: '01 ingress' },
+  { from: -16, to: -4, label: '02 interfaces' },
+  { from: -4, to: 7, label: '03 core' },
+  { from: 7, to: 17, label: '04 workers' },
+  { from: 17, to: 27, label: '05 outputs' },
+]
+/** дорожки тянутся от дальнего края карты до ближнего */
+export const LANE_Z: [far: number, near: number] = [-20.5, 21]
 
 /** Какие узлы в фокусе на каждой главе. На первой карта показана целиком. */
 export const CHAPTER_FOCUS: NodeId[][] = [
@@ -117,23 +183,23 @@ export interface Shot {
 }
 
 export const SHOTS: Shot[] = [
-  { x: 0.5, z: 0.5, dist: 58, azimuth: 32, polar: 56, narrow: 1.85 },
-  { x: -5, z: 1, dist: 21, azimuth: 18, polar: 56, narrow: 1.2 },
-  { x: 0, z: 5.6, dist: 20, azimuth: -28, polar: 58, narrow: 1.2 },
-  { x: 4.3, z: 0.8, dist: 25, azimuth: 36, polar: 54, narrow: 1.2 },
-  { x: 11.7, z: -1.2, dist: 26, azimuth: -34, polar: 55, narrow: 1.55 },
-  { x: -2, z: -7, dist: 25, azimuth: 24, polar: 57, narrow: 1.75 },
-  { x: -3, z: 2, dist: 40, azimuth: -52, polar: 60, narrow: 1.5 },
-  { x: 5, z: 11, dist: 21, azimuth: 26, polar: 56, narrow: 1.2 },
-  { x: -5, z: 11, dist: 21, azimuth: -24, polar: 57, narrow: 1.2 },
-  { x: 9, z: -10, dist: 21, azimuth: -30, polar: 56, narrow: 1.2 },
-  { x: -11, z: -2, dist: 21, azimuth: 30, polar: 56, narrow: 1.25 },
-  { x: -13, z: -7, dist: 21, azimuth: 20, polar: 57, narrow: 1.2 },
-  { x: 13, z: 8, dist: 21, azimuth: -32, polar: 56, narrow: 1.2 },
+  { x: 0, z: 1, dist: 60, azimuth: 26, polar: 55, narrow: 1.35 },
+  { x: -10, z: -2, dist: 23, azimuth: 18, polar: 56, narrow: 1.25 },
+  { x: -10, z: 7, dist: 23, azimuth: -26, polar: 57, narrow: 1.25 },
+  { x: 2, z: 2.5, dist: 29, azimuth: 30, polar: 54, narrow: 1.3 },
+  { x: 17, z: 7, dist: 30, azimuth: -30, polar: 55, narrow: 1.55 },
+  { x: 12, z: -6.5, dist: 29, azimuth: 22, polar: 56, narrow: 1.4 },
+  { x: -8, z: 2, dist: 48, azimuth: -44, polar: 58, narrow: 1.4 },
+  { x: -6, z: 15, dist: 22, azimuth: 26, polar: 56, narrow: 1.25 },
+  { x: -14, z: 15, dist: 22, azimuth: -24, polar: 57, narrow: 1.25 },
+  { x: 22, z: -2, dist: 22, azimuth: -30, polar: 56, narrow: 1.25 },
+  { x: -10, z: -11, dist: 22, azimuth: 30, polar: 56, narrow: 1.25 },
+  { x: 22, z: -11, dist: 22, azimuth: 20, polar: 57, narrow: 1.25 },
+  { x: 2, z: 15, dist: 22, azimuth: -32, polar: 56, narrow: 1.25 },
 ]
 
 /** Общий вид карты на главной, когда посетитель долистал до блока с услугами: карта по центру, ближе и круче сверху. */
-export const EXPLORE_SHOT: Shot = { x: -1.3, z: -0.4, dist: 58, azimuth: 8, polar: 30, narrow: 1.7 }
+export const EXPLORE_SHOT: Shot = { x: 1, z: 4.5, dist: 76, azimuth: -16, polar: 34, narrow: 1.3 }
 
 /** Какую главу открывает узел по клику. */
 export const NODE_CHAPTER: Record<NodeId, number> = {

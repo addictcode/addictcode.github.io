@@ -1,11 +1,9 @@
-import { BoxGeometry, BufferGeometry, CanvasTexture, EdgesGeometry, Float32BufferAttribute, LinearFilter, SRGBColorSpace } from 'three'
+import { BoxGeometry, BufferGeometry, CanvasTexture, EdgesGeometry, Float32BufferAttribute, LinearFilter, LinearMipmapLinearFilter, SRGBColorSpace } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import type { Box } from './nodeShapes'
 
 /** половина стороны контура, которым узел очерчен на земле */
 export const FOOTPRINT = 2.1
-const TRACE_WIDTH = 0.07
-const TRACE_HEIGHT = 0.02
 
 /** Сплошные грани узла одной геометрией. */
 export function solidGeometry(boxes: Box[]): BufferGeometry {
@@ -47,20 +45,18 @@ export function footprintGeometry(): BufferGeometry {
   return geometry
 }
 
-/** Дорожка связи: плоские полоски по ломаной. */
-export function traceGeometry(path: [number, number][]): BufferGeometry {
+/** Плоская полоса шириной `width` по ломаной: дорожка связи или подложка шины под ней. */
+export function traceGeometry(points: [number, number][], width: number, height: number): BufferGeometry {
   const parts: BufferGeometry[] = []
-  for (let i = 0; i < path.length - 1; i += 1) {
-    const [ax, az] = path[i]
-    const [bx, bz] = path[i + 1]
-    const alongX = Math.abs(bx - ax) > Math.abs(bz - az)
-    const length = Math.hypot(bx - ax, bz - az) + TRACE_WIDTH
+  for (let i = 0; i < points.length - 1; i += 1) {
+    const [ax, az] = points[i]
+    const [bx, bz] = points[i + 1]
+    // полоса чуть длиннее отрезка, чтобы скошенные углы смыкались без щелей
+    const length = Math.hypot(bx - ax, bz - az) + width
     parts.push(
-      new BoxGeometry(alongX ? length : TRACE_WIDTH, TRACE_HEIGHT, alongX ? TRACE_WIDTH : length).translate(
-        (ax + bx) / 2,
-        TRACE_HEIGHT / 2,
-        (az + bz) / 2,
-      ),
+      new BoxGeometry(length, height, width)
+        .rotateY(-Math.atan2(bz - az, bx - ax))
+        .translate((ax + bx) / 2, height / 2, (az + bz) / 2),
     )
   }
   const merged = mergeGeometries(parts)
@@ -68,21 +64,88 @@ export function traceGeometry(path: [number, number][]): BufferGeometry {
   return merged
 }
 
+/** Контактная площадка: квадратная рамка на «полу» вокруг точки. */
+export function padGeometry(points: [number, number][], size: number): BufferGeometry {
+  const h = size / 2
+  const y = 0.03
+  const positions: number[] = []
+  for (const [x, z] of points) {
+    const corners = [
+      [x - h, z - h],
+      [x + h, z - h],
+      [x + h, z + h],
+      [x - h, z + h],
+    ]
+    corners.forEach(([cx, cz], i) => {
+      const [nx, nz] = corners[(i + 1) % 4]
+      positions.push(cx, y, cz, nx, y, nz)
+    })
+  }
+  const geometry = new BufferGeometry()
+  geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
+  return geometry
+}
+
+/** Пунктир на «полу»: отрезки между парами точек, по `dash` штрих и пропуск. */
+export function dashedGeometry(lines: [[number, number], [number, number]][], dash: number): BufferGeometry {
+  const positions: number[] = []
+  const y = 0.01
+  for (const [[ax, az], [bx, bz]] of lines) {
+    const length = Math.hypot(bx - ax, bz - az)
+    for (let d = 0; d < length; d += dash * 2) {
+      const f0 = d / length
+      const f1 = Math.min(1, (d + dash) / length)
+      positions.push(ax + (bx - ax) * f0, y, az + (bz - az) * f0, ax + (bx - ax) * f1, y, az + (bz - az) * f1)
+    }
+  }
+  const geometry = new BufferGeometry()
+  geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
+  return geometry
+}
+
 export const LABEL_ASPECT = 4
 
-/** Подпись узла: моноширинный текст с маркером, рисуется в canvas. */
+/** Подпись узла: квадратный маркер и моноширинный текст от левого края, рисуется в canvas. */
 export function labelTexture(text: string, font: string): CanvasTexture {
   const canvas = document.createElement('canvas')
   canvas.width = 512
   canvas.height = 512 / LABEL_ASPECT
   const ctx = canvas.getContext('2d')
   if (ctx) {
-    ctx.font = `500 52px ${font}`
-    ctx.textBaseline = 'middle'
-    ctx.textAlign = 'center'
     ctx.fillStyle = '#ffffff'
-    ctx.fillText(text, canvas.width / 2, canvas.height / 2 + 2)
+    ctx.fillRect(4, canvas.height / 2 - 7, 14, 14)
+    ctx.font = `500 50px ${font}`
+    ctx.textBaseline = 'middle'
+    ctx.textAlign = 'left'
+    ctx.fillText(text, 34, canvas.height / 2 + 2)
   }
+  return canvasTexture(canvas)
+}
+
+/** Надпись, напечатанная на «полу»: подписи колонок карты. */
+export function floorTextTexture(text: string, font: string): CanvasTexture {
+  const canvas = document.createElement('canvas')
+  canvas.width = 1024
+  canvas.height = 1024 / FLOOR_TEXT_ASPECT
+  const ctx = canvas.getContext('2d')
+  if (ctx) {
+    ctx.font = `500 76px ${font}`
+    ctx.textBaseline = 'middle'
+    ctx.textAlign = 'left'
+    ctx.fillStyle = '#ffffff'
+    ctx.fillText(text.toUpperCase(), 8, canvas.height / 2 + 4)
+  }
+  // надпись видна под острым углом: без мип-карт она рябит
+  const texture = canvasTexture(canvas)
+  texture.generateMipmaps = true
+  texture.minFilter = LinearMipmapLinearFilter
+  texture.anisotropy = 8
+  return texture
+}
+
+export const FLOOR_TEXT_ASPECT = 8
+
+function canvasTexture(canvas: HTMLCanvasElement): CanvasTexture {
   const texture = new CanvasTexture(canvas)
   texture.colorSpace = SRGBColorSpace
   texture.minFilter = LinearFilter

@@ -30,16 +30,53 @@ import {
   Vector3,
 } from 'three'
 import { onSystemEvent, type SystemEvent } from '../system/bus'
-import { CHAPTER_FOCUS, EDGES, EXPLORE_SHOT, OVERVIEW_CHAPTERS, NODE_IDS, NODES, SHOTS, type NodeId, type Shot } from '../system/graph'
+import {
+  CHAPTER_FOCUS,
+  EDGES,
+  edgePoints,
+  EXPLORE_SHOT,
+  LANE_Z,
+  LANES,
+  NODE_IDS,
+  NODES,
+  OVERVIEW_CHAPTERS,
+  pathLength,
+  pointAlong,
+  SHOTS,
+  type NodeId,
+  type Point,
+  type Shot,
+} from '../system/graph'
 import { placeHotspot } from '../system/hotspots'
 import { getChapter, getExplore, isProjectPage } from '../system/view'
-import { edgeGeometry, footprintGeometry, LABEL_ASPECT, labelTexture, solidGeometry, traceGeometry } from './geometry'
+import {
+  dashedGeometry,
+  edgeGeometry,
+  FLOOR_TEXT_ASPECT,
+  floorTextTexture,
+  FOOTPRINT,
+  footprintGeometry,
+  LABEL_ASPECT,
+  labelTexture,
+  padGeometry,
+  solidGeometry,
+  traceGeometry,
+} from './geometry'
 import { nodeShape } from './nodeShapes'
 import { LABEL_FONT, PALETTE } from './palette'
 
 /** высота узла вне фокуса, доля от полной */
 const LOW = 0.4
-const LABEL_HEIGHT = 0.02
+const LABEL_HEIGHT = 0.019
+/** выносная линия от верха узла до подписи */
+const LEADER = 1.4
+const TRACE_WIDTH = 0.08
+/** подложка шины: широкая тёмная полоса под тонкой дорожкой */
+const BAND_WIDTH = 0.9
+const PAD_SIZE = 0.42
+/** узлы крупнее брусков, из которых собраны: на просторной карте они не теряются */
+const NODE_SCALE = 1.2
+const LANE_TEXT_HEIGHT = 1.05
 const PACKET_Y = 0.14
 const PACKET_SPEED = 10
 const BEAT_SPEED = 5
@@ -50,6 +87,8 @@ const TRAIL_GAP = 0.2
 const WIDE = 1100
 /** страница проекта на широком экране: текст справа, карта сдвинута влево */
 const SHIFT_PROJECT_X = 0.2
+/** блок услуг на широком экране: слева заголовок и контакты, карта сдвинута вправо */
+const SHIFT_EXPLORE_X = 0.06
 /** первый экран главной: заголовок внизу, карта поднята */
 const SHIFT_HERO_Y = 0.13
 const SHIFT_Y_NARROW = 0.12
@@ -69,6 +108,8 @@ const C = {
   edgeDim: color(PALETTE.edgeDim),
   edge: color(PALETTE.edge),
   trace: color(PALETTE.trace),
+  band: color(PALETTE.band),
+  bandOn: color(PALETTE.bandOn),
   traceOn: color(PALETTE.traceOn),
   label: color(PALETTE.label),
   labelOn: color(PALETTE.labelOn),
@@ -93,22 +134,32 @@ const GRID_FRAGMENT = /* glsl */ `
   uniform float uPointerOn;
   uniform vec3 uRipple;
   varying vec2 vWorld;
-  float grid(vec2 p) {
-    vec2 w = fwidth(p);
-    vec2 g = abs(fract(p - 0.5) - 0.5) / w;
+  // тонкие линии с шагом step
+  float lines(vec2 p, float step) {
+    vec2 w = fwidth(p) / step;
+    vec2 g = abs(fract(p / step - 0.5) - 0.5) / w;
     float line = 1.0 - min(min(g.x, g.y), 1.0);
-    return line * (1.0 - smoothstep(0.25, 0.7, max(w.x, w.y)));
+    return line * (1.0 - smoothstep(0.2, 0.6, max(w.x, w.y)));
   }
   void main() {
-    float lines = grid(vWorld) * 0.5 + grid(vWorld / 5.0) * 0.9;
-    float fade = 1.0 - smoothstep(uRadius * 0.3, uRadius, distance(vWorld, uFocus));
+    vec2 w = fwidth(vWorld);
+    float px = max(w.x, w.y);
+    // точки на каждом узле сетки, линии через 5 и крестики через 10
+    vec2 cell = abs(fract(vWorld + 0.5) - 0.5);
+    float dots = (1.0 - smoothstep(0.035, 0.035 + px * 1.2, length(cell))) * (1.0 - smoothstep(0.08, 0.25, px));
+    vec2 ten = abs(fract(vWorld / 10.0 + 0.5) - 0.5) * 10.0;
+    float crossX = (1.0 - smoothstep(0.0, w.x * 1.2, ten.x)) * step(ten.y, 0.55);
+    float crossZ = (1.0 - smoothstep(0.0, w.y * 1.2, ten.y)) * step(ten.x, 0.55);
+    float marks = max(crossX, crossZ);
+    float pattern = dots * 0.75 + lines(vWorld, 5.0) * 0.32 + marks * 1.3;
+    float fade = 1.0 - smoothstep(uRadius * 0.25, uRadius, distance(vWorld, uFocus));
     // сетка ярче под курсором
-    float near = (1.0 - smoothstep(0.0, 4.5, distance(vWorld, uPointer))) * uPointerOn;
+    float near = (1.0 - smoothstep(0.0, 5.0, distance(vWorld, uPointer))) * uPointerOn;
     // волна от клика и от пришедшего пакета: кольцо расходится от точки uRipple.xy
     float age = uRipple.z;
-    float ring = (1.0 - smoothstep(0.0, 1.6, abs(distance(vWorld, uRipple.xy) - age * 16.0))) * max(0.0, 1.0 - age / 1.6);
-    vec3 tint = mix(uColor, uAccent, clamp(ring, 0.0, 1.0));
-    gl_FragColor = vec4(tint, lines * fade * (1.0 + near * 1.4 + ring * 3.0));
+    float ring = (1.0 - smoothstep(0.0, 1.6, abs(distance(vWorld, uRipple.xy) - age * 18.0))) * max(0.0, 1.0 - age / 1.6);
+    vec3 tint = mix(uColor, uAccent, clamp(ring + near * 0.35, 0.0, 1.0));
+    gl_FragColor = vec4(tint, pattern * fade * (1.0 + near * 1.8 + ring * 3.0));
   }
 `
 
@@ -131,7 +182,7 @@ function buildLegs(): Map<string, Leg> {
   const legs = new Map<string, Leg>()
   const measure = (points: Vector3[]) => points.slice(1).reduce((sum, point, i) => sum + point.distanceTo(points[i]), 0)
   for (const edge of EDGES) {
-    const points = edge.path.map(([x, z]) => new Vector3(x, PACKET_Y, z))
+    const points = edgePoints(edge.path).map(([x, z]) => new Vector3(x, PACKET_Y, z))
     const total = measure(points)
     legs.set(`${edge.from}>${edge.to}`, { points, total, to: edge.to })
     legs.set(`${edge.to}>${edge.from}`, { points: [...points].reverse(), total, to: edge.from })
@@ -161,6 +212,10 @@ function buildMap() {
   root.add(sun)
 
   const footprint = footprintGeometry()
+  const outline = padGeometry([[0, 0]], FOOTPRINT * 2)
+  const outlineMat = new LineBasicMaterial({ color: C.edgeDim, transparent: true, opacity: 0.45 })
+  const leaderGeometry = new BufferGeometry()
+  leaderGeometry.setAttribute('position', new Float32BufferAttribute([0, 0, 0, 0, 1, 0], 3))
   const scanGeometry = new BufferGeometry()
   const h = SCAN_SIZE
   scanGeometry.setAttribute('position', new Float32BufferAttribute([-h, 0, -h, h, 0, -h, h, 0, h, -h, 0, h], 3))
@@ -169,6 +224,7 @@ function buildMap() {
     const def = NODES[id]
     const group = new Group()
     group.position.set(def.x, 0, def.z)
+    group.scale.setScalar(NODE_SCALE)
     const solidMat = new MeshLambertMaterial({ color: C.solid, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 })
     const edgeMat = new LineBasicMaterial({ color: C.edge })
     const footMat = new LineBasicMaterial({ color: C.edgeDim })
@@ -193,17 +249,52 @@ function buildMap() {
     const scan = new LineLoop(scanGeometry, scanMat)
     const label = new Sprite(labelMat)
     label.scale.set(LABEL_HEIGHT * LABEL_ASPECT, LABEL_HEIGHT, 1)
+    // подпись начинается от выносной линии и идёт вправо
+    label.center.set(0.012, 0.5)
     label.renderOrder = 10
-    group.add(body, new LineSegments(footprint, footMat), label, scan)
+    const leaderMat = new LineBasicMaterial({ color: C.edgeDim, transparent: true })
+    const leader = new LineSegments(leaderGeometry, leaderMat)
+    group.add(body, new LineSegments(footprint, footMat), new LineSegments(outline, outlineMat), label, leader, scan)
     root.add(group)
-    return { id, body, solidMat, edgeMat, mirrorMat, footMat, label, labelMat, scan, scanMat, height: shape.height, lift: 1, focus: 0, kick: 0 }
+    return { id, body, solidMat, edgeMat, mirrorMat, footMat, label, labelMat, leader, leaderMat, scan, scanMat, height: shape.height, lift: 1, focus: 0, kick: 0 }
   })
 
+  // связи: тонкая дорожка поверх широкой тёмной шины, у входа в узел — контактная площадка
+  const ports: Point[] = []
   const traces = EDGES.map((edge) => {
+    const points = edgePoints(edge.path)
     const material = new MeshBasicMaterial({ color: C.trace })
-    root.add(new Mesh(traceGeometry(edge.path), material))
-    return { material, from: NODE_IDS.indexOf(edge.from), to: NODE_IDS.indexOf(edge.to) }
+    const bandMaterial = new MeshBasicMaterial({ color: C.band, transparent: true, opacity: 0.9, depthWrite: false })
+    const band = new Mesh(traceGeometry(points, BAND_WIDTH, 0.005), bandMaterial)
+    band.renderOrder = -0.5
+    root.add(band, new Mesh(traceGeometry(points, TRACE_WIDTH, 0.02), material))
+    const length = pathLength(points)
+    const port = FOOTPRINT * NODE_SCALE + 0.4
+    ports.push(pointAlong(points, port), pointAlong(points, length - port))
+    for (let i = 1; i < edge.path.length - 1; i += 1) ports.push(edge.path[i])
+    return { material, bandMaterial, from: NODE_IDS.indexOf(edge.from), to: NODE_IDS.indexOf(edge.to) }
   })
+  const unique = ports.filter(([x, z], i) => ports.findIndex(([ox, oz]) => Math.hypot(ox - x, oz - z) < 0.3) === i)
+  root.add(new LineSegments(padGeometry(unique, PAD_SIZE), new LineBasicMaterial({ color: color(PALETTE.pad) })))
+
+  // колонки карты: пунктирные границы и подписи, напечатанные на «полу» у дальнего края
+  const [far, near] = LANE_Z
+  const bounds = [...new Set(LANES.flatMap((lane) => [lane.from, lane.to]))]
+  const laneMat = new LineBasicMaterial({ color: color(PALETTE.lane) })
+  root.add(new LineSegments(dashedGeometry(bounds.map((x) => [[x, far], [x, near]]), 0.5), laneMat))
+  root.add(new LineSegments(dashedGeometry([[[bounds[0], far], [bounds[bounds.length - 1], far]]], 0.25), laneMat))
+  for (const lane of LANES) {
+    const material = new MeshBasicMaterial({
+      map: floorTextTexture(lane.label, LABEL_FONT),
+      color: color(PALETTE.laneText),
+      transparent: true,
+      depthWrite: false,
+    })
+    const width = LANE_TEXT_HEIGHT * FLOOR_TEXT_ASPECT
+    const text = new Mesh(new PlaneGeometry(width, LANE_TEXT_HEIGHT).rotateX(-Math.PI / 2), material)
+    text.position.set(lane.from + 0.6 + width / 2, 0.02, far + 1.2)
+    root.add(text)
+  }
 
   const grid = new ShaderMaterial({
     vertexShader: GRID_VERTEX,
@@ -212,7 +303,7 @@ function buildMap() {
       uColor: { value: color(PALETTE.grid) },
       uAccent: { value: color(PALETTE.accent) },
       uFocus: { value: new Vector2() },
-      uRadius: { value: 40 },
+      uRadius: { value: 60 },
       uPointer: { value: new Vector2() },
       uPointerOn: { value: 0 },
       uRipple: { value: new Vector3(0, 0, 99) },
@@ -360,7 +451,7 @@ export function SystemScene({ posterChapter, onReady }: SystemSceneProps) {
     const explore = still ? 0 : getExplore()
 
     // точка схода: на странице проекта карта левее центра, на первом экране главной выше
-    const wantX = wide && project ? SHIFT_PROJECT_X : 0
+    const wantX = wide ? (project ? SHIFT_PROJECT_X : -SHIFT_EXPLORE_X * explore) : 0
     const wantY = wide ? (project ? 0.03 : SHIFT_HERO_Y * (1 - explore) * (chapter === null ? 1 : 0.3)) : SHIFT_Y_NARROW
     const sh = shift.current
     const kShift = still || !sh.started ? 1 : 1 - Math.exp(-3.2 * dt)
@@ -376,7 +467,8 @@ export function SystemScene({ posterChapter, onReady }: SystemSceneProps) {
     r.x += (want.x - r.x) * k
     r.z += (want.z - r.z) * k
     r.dist += (want.dist - r.dist) * k
-    const drift = Math.sin(time * DRIFT_SPEED) * DRIFT_ANGLE * (chapter === null ? 1 : 0.5)
+    // в блоке услуг поворот почти стихает: подписи у узлов не уплывают, пока их читают
+    const drift = Math.sin(time * DRIFT_SPEED) * DRIFT_ANGLE * (chapter === null ? 1 - 0.9 * explore : 0.5)
     r.azimuth += (want.azimuth + drift + pointer.current.x * 5 - r.azimuth) * k
     r.polar += (want.polar - pointer.current.y * 2.5 - r.polar) * k
     r.narrow += (want.narrow - r.narrow) * k
@@ -422,7 +514,10 @@ export function SystemScene({ posterChapter, onReady }: SystemSceneProps) {
       node.body.scale.set(bump, Math.max(0.001, node.lift * bump), bump)
       node.scan.position.y = (0.5 + 0.5 * Math.sin(time * 1.7 + index)) * node.height * node.lift
       node.scanMat.opacity = still ? 0 : node.focus * 0.9
-      node.label.position.y = node.height * node.lift + 0.55
+      const top = node.height * node.lift
+      node.leader.position.y = top + 0.2
+      node.leader.scale.y = LEADER - 0.2
+      node.label.position.y = top + LEADER
       const raised = (node.lift - LOW) / (1 - LOW)
       mixed.lerpColors(C.edgeDim, C.edge, raised)
       node.edgeMat.color.copy(mixed).lerp(C.accent, Math.max(node.focus, node.kick * 0.9))
@@ -431,12 +526,15 @@ export function SystemScene({ posterChapter, onReady }: SystemSceneProps) {
       node.footMat.color.lerpColors(C.edgeDim, C.accent, node.focus)
       node.labelMat.color.lerpColors(C.label, C.labelOn, Math.max(node.focus, node.kick))
       node.labelMat.opacity = 0.45 + 0.55 * Math.max(raised, node.focus)
+      node.leaderMat.color.lerpColors(C.edgeDim, C.accent, Math.max(node.focus, node.kick))
       // кнопка и подпись узла в интерфейсе привязаны к его основанию
       point.set(NODES[node.id].x, 0, NODES[node.id].z).project(camera)
       placeHotspot(node.id, (point.x * 0.5 + 0.5) * size.width, (0.5 - point.y * 0.5) * size.height, point.z < 1)
     })
     map.traces.forEach((trace) => {
-      trace.material.color.lerpColors(C.trace, C.traceOn, Math.max(map.nodes[trace.from].focus, map.nodes[trace.to].focus))
+      const lit = Math.max(map.nodes[trace.from].focus, map.nodes[trace.to].focus)
+      trace.material.color.lerpColors(C.trace, C.traceOn, lit)
+      trace.bandMaterial.color.lerpColors(C.band, C.bandOn, lit)
     })
 
     // пакеты

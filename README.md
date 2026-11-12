@@ -28,7 +28,7 @@ npm run lint
 | Заголовок и описание для соцсетей | `index.html` (og-теги) и `meta` в `ru.ts` / `en.ts` |
 | Цвета страницы | переменные в `src/styles/main.css` |
 | Цвета карты | `src/scene/palette.ts` (совпадают с переменными CSS) |
-| Узлы, связи и ракурсы камеры по главам | `src/system/graph.ts` |
+| Узлы, связи, колонки карты и ракурсы камеры по главам | `src/system/graph.ts` (`NODES`, `EDGES`, `LANES`, `SHOTS`) |
 | Форма узлов | `src/scene/nodeShapes.ts` |
 | Список услуг на главной | `offer` в `ru.ts` / `en.ts`; у какого узла подписана услуга — `NODE_OFFERS` в `src/system/graph.ts` |
 | Тексты демо-прототипов | `src/content/lab.ru.ts` и `lab.en.ts`; цены и расписание — `src/content/demoData.ts`; сами прототипы — `src/lab/` |
