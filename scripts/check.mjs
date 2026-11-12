@@ -1,5 +1,5 @@
 // Сквозная проверка собранного сайта в Chromium:
-// главная (вступление, карта, выбор проекта узлом и строкой услуги), страницы проектов,
+// главная (первый экран, фигура, услуги, проекты, демо, контакты, навигация), страницы проектов,
 // горизонтальный скролл, оба демо, шесть прототипов, переключатель языка, режимы без WebGL и с prefers-reduced-motion.
 // Запуск: npm run build && npm run check. Скриншоты ложатся в test-results/.
 import { mkdir } from 'node:fs/promises'
@@ -31,7 +31,17 @@ async function open(options = {}, path = '') {
 }
 
 const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
-const toOffer = (page) => page.evaluate(() => document.getElementById('offer').scrollIntoView({ behavior: 'instant' }))
+const scrollTo = (page, selector) => page.evaluate((s) => document.querySelector(s).scrollIntoView({ behavior: 'instant' }), selector)
+/** во что сейчас собрана фигура: состояние сцены видно по разделу посередине экрана */
+const shapeAt = (page) =>
+  page.evaluate(() => {
+    const middle = window.innerHeight / 2
+    const hit = [...document.querySelectorAll('[data-shape]')].find((el) => {
+      const box = el.getBoundingClientRect()
+      return box.top <= middle && box.bottom > middle
+    })
+    return hit?.dataset.shape ?? null
+  })
 
 /* 1. Главная и страницы проектов */
 for (const [name, viewport] of [
@@ -41,45 +51,43 @@ for (const [name, viewport] of [
   console.log(`\n${name}`)
   const { context, page, errors } = await open({ viewport, deviceScaleFactor: 1, hasTouch: name.startsWith('mobile') })
   await page.waitForSelector('html[data-canvas]', { timeout: 30000 }).catch(() => {})
-  ok((await page.locator('html[data-canvas]').count()) === 1, '3D-карта отрисовалась')
-  await page.waitForTimeout(1200)
+  ok((await page.locator('html[data-canvas]').count()) === 1, '3D-фигура отрисовалась')
+  await page.waitForTimeout(1500)
   await page.screenshot({ path: `${OUT}/${name}-home-intro.png` })
   ok((await page.locator('main h1').count()) === 1, 'на главной один заголовок первого уровня')
+  ok((await page.locator('#services .row').count()) === 9, 'в разделе услуг 9 строк')
+  ok((await page.locator('#projects .project').count()) === 5, 'в разделе проектов 5 проектов')
+  ok((await page.locator('#demos .row .tag').count()) === 6, 'шесть демо помечены как демо')
+  ok((await page.locator('#contact .handle').count()) === 1, 'в контактах есть Telegram')
 
-  await toOffer(page)
-  await page.waitForTimeout(1800)
-  await page.screenshot({ path: `${OUT}/${name}-home-map.png` })
-  const desktop = name.startsWith('desktop')
-  // на широком экране услуги подписаны у узлов карты, на узком идут списком под картой
-  const pick = (id, node) => (desktop ? page.locator(`.hotspot[data-node="${node}"]`) : page.locator(`.offer button[data-offer="${id}"]`).first())
-  ok((await page.locator('.offer button').count()) === 15, 'в списке 15 услуг')
-  if (desktop) {
-    ok((await page.locator('.hotspot__tag:visible').count()) === 15, 'у каждого узла карты видна подпись')
-    ok(!(await page.locator('.offer').isVisible()), 'список скрыт: услуги подписаны на карте')
+  for (const [selector, shape] of [['#services', 'services'], ['[data-project="crm"]', 'crm'], ['#contact', 'plane']]) {
+    await scrollTo(page, selector)
+    await page.waitForTimeout(400)
+    ok((await shapeAt(page)) === shape, `раздел ${selector}: фигура собирается в «${shape}»`)
   }
-  ok((await page.locator('.card').count()) === 0, 'пока ничего не выбрано, карточки нет')
+  await scrollTo(page, '[data-project="crm"]')
+  await page.waitForTimeout(1500)
+  await page.screenshot({ path: `${OUT}/${name}-home-project.png` })
 
-  // узел карты выбирает проект
-  await page.locator('.hotspot[data-node="bot"]').click()
-  await page.locator('.card[data-card="bot"]').waitFor({ timeout: 5000 }).catch(() => {})
-  ok((await page.locator('.card[data-card="bot"]').count()) === 1, 'клик по узлу bot открыл карточку проекта')
-  await page.waitForTimeout(1800)
-  await page.screenshot({ path: `${OUT}/${name}-home-selected.png` })
-
-  // строка услуги выбирает проект, кнопка «Закрыть» снимает выбор
-  await pick('crm', 'db').click()
-  ok((await page.locator('.card[data-card="crm"]').count()) === 1, 'услуга открыла карточку CRM')
-  await page.locator('.card__close').click()
-  ok((await page.locator('.card').count()) === 0, 'карточка закрывается')
-
-  // из карточки на страницу проекта и обратно
-  await pick('site', 'site').click()
-  await page.locator('.card a.btn').click()
-  await page.waitForSelector('article#site')
-  ok(new URL(page.url()).hash === '#/site', 'карточка ведёт на страницу проекта')
+  // строка услуги и кнопка проекта ведут на страницу проекта
+  await page.locator('#services .row[data-offer="bot"]').first().click()
+  await page.waitForSelector('article#bot')
+  ok(new URL(page.url()).hash === '#/bot', 'строка услуги ведёт на страницу проекта')
   await page.locator('.back').click()
-  await page.waitForSelector('#offer')
-  ok((await page.locator('.card[data-card="site"]').count()) === 1, 'после возврата проект остаётся выбранным')
+  await page.waitForSelector('#projects')
+  await page.locator('[data-project="site"] a.btn').click()
+  await page.waitForSelector('article#site')
+  ok(new URL(page.url()).hash === '#/site', 'кнопка проекта ведёт на его страницу')
+  if (name.startsWith('desktop')) {
+    // навигация в шапке со страницы проекта возвращает к разделу главной
+    await page.locator('.topbar__nav a[href="#demos"]').click()
+    await page.waitForSelector('#demos')
+    await page.waitForTimeout(300)
+    const top = await page.evaluate(() => document.getElementById('demos').getBoundingClientRect().top)
+    ok(Math.abs(top) < 120, 'пункт меню со страницы проекта открывает раздел главной')
+  }
+  await page.goto(site.url)
+  await page.waitForSelector('#intro')
   ok((await overflow(page)) <= 0, 'главная: нет горизонтального скролла')
 
   for (const id of PAGES) {
@@ -253,26 +261,17 @@ for (const [name, options, init] of [
   await page.waitForTimeout(1500)
   ok((await page.locator('html[data-canvas]').count()) === 0, 'включилась статичная версия')
   ok((await page.locator('canvas').count()) === 0, 'canvas не создавался')
-  const posterShown = (chapter) =>
-    page
-      .waitForFunction(
-        (file) => {
-          const img = document.querySelector('.stage__poster img')
-          return img.complete && img.naturalWidth > 0 && img.currentSrc.includes(file)
-        },
-        `chapter-${chapter}`,
-        { timeout: 5000 },
-      )
-      .then(() => true, () => false)
-  // без карты проект выбирается строкой услуги
-  await toOffer(page)
-  await page.locator('.offer button[data-offer="parsing"]').first().click()
-  ok((await page.locator('.card[data-card="parsing"]').count()) === 1, 'строка услуги открывает карточку и без карты')
-  ok(await posterShown(0), 'на главной показан общий кадр карты')
-  await page.screenshot({ path: `${OUT}/${name}-home.png` })
+  const posterShown = await page
+    .waitForFunction(() => {
+      const img = document.querySelector('.stage__poster img')
+      return img?.complete && img.naturalWidth > 0 && img.currentSrc.includes('core')
+    }, null, { timeout: 5000 })
+    .then(() => true, () => false)
+  ok(posterShown, 'на первом экране показан кадр фигуры')
+  ok((await page.locator('#services .row').count()) === 9 && (await page.locator('#projects .project').count()) === 5, 'главная читается целиком')
+  await page.screenshot({ path: `${OUT}/${name}-home.png`, fullPage: true })
   await page.goto(`${site.url}#/site`)
   await page.waitForSelector('article#site')
-  ok(await posterShown(1), 'страница проекта: показан её кадр карты')
   ok((await page.locator('#site .facts > div').count()) > 0, 'страница проекта читается')
   await context.close()
 }

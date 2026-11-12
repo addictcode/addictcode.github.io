@@ -2,7 +2,6 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { useLang } from '../i18n/LangContext'
 import { hasWebGL, pickStageMode } from '../system/capability'
 import { useRoute } from '../system/view'
-import { Hotspots } from './Hotspots'
 
 const SystemCanvas = lazy(() => import('../scene/SystemCanvas'))
 
@@ -36,30 +35,28 @@ function whenNeeded(run: () => void): () => void {
   return stop
 }
 
-/** Кадр карты для главы: широкий и вертикальный. Он же — статичная версия без WebGL. */
-function Poster({ chapter }: { chapter: number }) {
+/** Кадр фигуры: широкий и вертикальный. Он же — статичная версия без WebGL. */
+function Poster() {
   const { t } = useLang()
-  const base = `/posters/chapter-${chapter}`
   return (
     <picture className="stage__poster">
-      <source media="(max-width: 1099px)" srcSet={`${base}-m.avif`} type="image/avif" />
-      <source media="(max-width: 1099px)" srcSet={`${base}-m.webp`} type="image/webp" />
-      <source srcSet={`${base}.avif`} type="image/avif" />
-      <img src={`${base}.webp`} alt={t.ui.stageAlt} width={1600} height={1000} decoding="async" fetchPriority={chapter === 0 ? 'high' : 'auto'} />
+      <source media="(max-width: 899px)" srcSet="/posters/core-m.avif" type="image/avif" />
+      <source media="(max-width: 899px)" srcSet="/posters/core-m.webp" type="image/webp" />
+      <source srcSet="/posters/core.avif" type="image/avif" />
+      <img src="/posters/core.webp" alt={t.ui.stageAlt} width={1600} height={1000} decoding="async" fetchPriority="high" />
     </picture>
   )
 }
 
 /**
- * Слой карты под текстом. Живая версия рисует карту в canvas,
- * статичная показывает кадр текущей главы.
+ * Слой фигуры под текстом. Живая версия рисует её в canvas,
+ * статичная показывает кадр на первом экране главной.
  */
 export function Stage() {
   const [mode, setMode] = useState(pickStageMode)
   const [load, setLoad] = useState(false)
   const [ready, setReady] = useState(false)
-  // на главной кадр общий: проект выбирается на живой карте, а в статичной версии — в списке услуг
-  const active = useRoute() ?? 0
+  const home = useRoute() === null
 
   useEffect(() => {
     if (mode !== 'live') return
@@ -75,8 +72,7 @@ export function Stage() {
 
   return (
     <div className="stage" data-mode={mode} data-ready={ready || undefined}>
-      {!ready && <Poster chapter={active} />}
-      {ready && <Hotspots />}
+      {!ready && home && <Poster />}
       {load && (
         <Suspense fallback={null}>
           <SystemCanvas onReady={() => setReady(true)} />
