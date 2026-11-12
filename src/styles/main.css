@@ -1004,18 +1004,20 @@ label > .mono {
 .hotspots {
   position: absolute;
   inset: 0;
+  /* подписи лежат поверх холста карты */
+  z-index: 1;
   overflow: hidden;
 }
 
+/* точка привязки — основание узла; кнопка накрывает сам узел над ней */
 .hotspot {
   position: absolute;
-  top: -42px;
-  left: -42px;
-  width: 84px;
-  height: 84px;
+  top: -84px;
+  left: -46px;
+  width: 92px;
+  height: 100px;
   padding: 0;
   border: 0;
-  border-radius: 50%;
   background: none;
   cursor: pointer;
   pointer-events: auto;
@@ -1024,6 +1026,10 @@ label > .mono {
 
 .hotspot:focus-visible {
   outline-offset: -6px;
+}
+
+.hotspot__tag {
+  display: none;
 }
 
 /* ───────── Услуги ───────── */
@@ -1129,6 +1135,10 @@ label > .mono {
   letter-spacing: -0.02em;
 }
 
+.offer__head .note {
+  margin-top: 10px;
+}
+
 .foot {
   margin-top: 44px !important;
   padding-top: 28px;
@@ -1145,53 +1155,10 @@ label > .mono {
   margin-right: 6px;
 }
 
-/* ───────── Широкий экран: текст слева, карта справа ───────── */
-@media (min-width: 560px) {
-  :root {
-    --gutter: 32px;
-  }
-
-  .monitor__cols,
-  .run__grid {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .run__crm,
-  .run__dash {
-    grid-column: 1 / -1;
-  }
-
-  .monitor__filter {
-    grid-template-columns: repeat(3, 1fr) auto;
-  }
-
-  .monitor__run {
-    grid-column: auto;
-  }
-
-  .shots {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
+/* ───────── Широкий экран: карта во весь экран, текст по краям и на самой карте ───────── */
 @media (min-width: 1100px) {
   :root {
     --gutter: max(40px, 4.5vw);
-  }
-
-  body {
-    }
-
-  /* затемнение под колонкой текста, чтобы линии карты не мешали читать */
-  .stage::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, var(--bg) 0, var(--bg) 40%, rgb(10 12 15 / 0) 58%);
-  }
-
-  .stage--poster::after {
-    content: none;
   }
 
   .topbar__nav {
@@ -1226,39 +1193,104 @@ label > .mono {
 
   .chapter__body {
     flex: none;
-    width: min(620px, 42vw);
-    margin-left: var(--gutter);
-    padding: calc(var(--topbar) + 14vh) 0 16vh;
     background: none;
     border: 0;
-  }
-
-  .chapter--hero {
-    justify-content: center;
-  }
-
-  .chapter--hero .chapter__body {
-    padding: calc(var(--topbar) + 24px) 0 40px;
-  }
-
-  h1 {
-    font-size: clamp(2.5rem, 3.9vw, 3.75rem);
   }
 
   h2 {
     font-size: clamp(2rem, 3vw, 2.75rem);
   }
 
-}
-
-@media (min-width: 1100px) {
   .title {
     font-size: clamp(2rem, 3vw, 2.75rem);
   }
 
+  /* первый экран: карта в центре, заголовок внизу слева, пояснение и кнопки внизу справа */
+  .chapter--hero {
+    position: relative;
+    justify-content: flex-end;
+  }
+
+  .chapter--hero::before {
+    content: '';
+    position: absolute;
+    inset: auto 0 0;
+    height: 64%;
+    background: linear-gradient(0deg, var(--bg) 0, rgb(10 12 15 / 0.9) 36%, rgb(10 12 15 / 0));
+    pointer-events: none;
+  }
+
+  .chapter--hero .chapter__body {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    column-gap: 6vw;
+    align-items: end;
+    margin: 0 var(--gutter);
+    padding: 0 0 7vh;
+    pointer-events: none;
+  }
+
+  .chapter--hero .chapter__body > * {
+    margin-top: 0;
+    pointer-events: auto;
+  }
+
+  .chapter--hero .eyebrow {
+    grid-column: 1 / -1;
+    margin-bottom: 18px;
+  }
+
+  .chapter--hero h1 {
+    font-size: clamp(2.5rem, min(5.3vw, 9.4vh), 5.5rem);
+    line-height: 0.98;
+    letter-spacing: -0.035em;
+  }
+
+  .hero__aside {
+    display: grid;
+    gap: 20px;
+    padding-bottom: 6px;
+  }
+
+  .hero__aside .hint {
+    margin: 0;
+    padding-top: 16px;
+  }
+
+  /* блок услуг: заголовок и контакты по углам, услуги подписаны у узлов карты */
   .chapter--offer .chapter__body {
-    padding-top: calc(var(--topbar) + 8vh);
-    padding-bottom: 8vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 100svh;
+    margin: 0 var(--gutter);
+    padding: calc(var(--topbar) + 5vh) 0 5vh;
+    pointer-events: none;
+  }
+
+  .chapter--offer .chapter__body > * {
+    pointer-events: auto;
+  }
+
+  .offer__head {
+    max-width: 440px;
+  }
+
+  /* список остаётся только там, где нет живой карты */
+  html[data-canvas] .offer {
+    display: none;
+  }
+
+  .offer {
+    max-width: 560px;
+  }
+
+  .foot {
+    max-width: 520px;
+    margin-top: 0 !important;
+    padding: 0;
+    border: 0;
   }
 
   .card {
@@ -1269,5 +1301,61 @@ label > .mono {
     width: 400px;
     margin: 0;
     background: rgb(15 18 22 / 0.96);
+  }
+
+  .hotspots[data-tags] .hotspot__tag {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    display: grid;
+    gap: 3px;
+    margin-top: 14px;
+    padding: 7px 11px 8px;
+    background: var(--panel);
+    border: 1px solid var(--line-strong);
+    border-left: 2px solid var(--accent);
+    border-radius: var(--radius);
+    font-family: var(--font-text);
+    font-size: 0.8125rem;
+    line-height: 1.25;
+    color: var(--ink);
+    text-align: left;
+    white-space: nowrap;
+    translate: -50% 0;
+    opacity: var(--explore, 0);
+  }
+
+  .hotspot__tag::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    width: 1px;
+    height: 14px;
+    background: var(--line-strong);
+  }
+
+  .hotspot__tag b {
+    font-weight: 500;
+  }
+
+  .hotspot:hover .hotspot__tag,
+  .hotspot[aria-pressed='true'] .hotspot__tag {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* страница проекта: текст справа, карта слева */
+  html[data-view='project'] .stage::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(270deg, var(--bg) 0, var(--bg) 42%, rgb(10 12 15 / 0) 60%);
+  }
+
+  .chapter--project .chapter__body {
+    width: min(620px, 42vw);
+    margin: 0 var(--gutter) 0 auto;
+    padding: calc(var(--topbar) + 12vh) 0 16vh;
   }
 }

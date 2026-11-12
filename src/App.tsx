@@ -1,6 +1,7 @@
 import { Header } from './components/Header'
 import { Home } from './components/Home'
 import { ProjectPage } from './components/ProjectPage'
+import { useEffect } from 'react'
 import { LangProvider, useLang } from './i18n/LangContext'
 import { PosterStage } from './stage/PosterStage'
 import { Stage } from './stage/Stage'
@@ -23,6 +24,10 @@ function SkipLink() {
 function Site() {
   const route = useRoute()
   useSiteEvents()
+  // вёрстка и затемнение под текстом зависят от того, главная это или страница проекта
+  useEffect(() => {
+    document.documentElement.dataset.view = route === null ? 'home' : 'project'
+  }, [route])
   return (
     <>
       <SkipLink />

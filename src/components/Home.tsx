@@ -72,17 +72,19 @@ export function Home() {
             <span>{t.hero.role}</span>
           </p>
           <h1 id="intro-title">{t.hero.title}</h1>
-          <p className="lead">{t.hero.phrase}</p>
-          <div className="actions">
-            <ExternalLink href={telegramUrl} variant="solid">
-              {t.ui.telegram}
-            </ExternalLink>
-            <a className="btn btn--ghost" href="#offer" data-log="off">
-              <span>{t.hero.cta}</span>
-              <ArrowRight />
-            </a>
+          <div className="hero__aside">
+            <p className="lead">{t.hero.phrase}</p>
+            <div className="actions">
+              <ExternalLink href={telegramUrl} variant="solid">
+                {t.ui.telegram}
+              </ExternalLink>
+              <a className="btn btn--ghost" href="#offer" data-log="off">
+                <span>{t.hero.cta}</span>
+                <ArrowRight />
+              </a>
+            </div>
+            <p className="hint mono">{t.hero.hint}</p>
           </div>
-          <p className="hint mono">{t.hero.hint}</p>
         </div>
       </section>
 
@@ -90,7 +92,10 @@ export function Home() {
         <div className="chapter__window" aria-hidden="true" />
         <div className="chapter__body">
           {selected !== null && <Card chapter={selected} />}
-          <h2 id="offer-title">{t.offer.title}</h2>
+          <header className="offer__head">
+            <h2 id="offer-title">{t.offer.title}</h2>
+            <p className="note">{t.offer.hint}</p>
+          </header>
           <ul className="offer">
             {t.offer.items.map((item, i) => (
               <li key={item.name}>
@@ -107,7 +112,6 @@ export function Home() {
               </li>
             ))}
           </ul>
-          <p className="note">{t.offer.hint}</p>
           <footer className="foot">
             <a className="handle" href={telegramUrl} target="_blank" rel="noreferrer">
               @{profile.telegram}

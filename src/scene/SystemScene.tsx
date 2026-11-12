@@ -9,6 +9,7 @@ import {
   Fog,
   Group,
   InstancedMesh,
+  LineLoop,
   LineBasicMaterial,
   LineSegments,
   MathUtils,
@@ -17,8 +18,12 @@ import {
   MeshLambertMaterial,
   Object3D,
   PerspectiveCamera,
+  Plane,
   PlaneGeometry,
+  Raycaster,
   ShaderMaterial,
+  BufferGeometry,
+  Float32BufferAttribute,
   Sprite,
   SpriteMaterial,
   Vector2,
@@ -27,7 +32,7 @@ import {
 import { onSystemEvent, type SystemEvent } from '../system/bus'
 import { CHAPTER_FOCUS, EDGES, EXPLORE_SHOT, NODE_IDS, NODES, SHOTS, type NodeId, type Shot } from '../system/graph'
 import { placeHotspot } from '../system/hotspots'
-import { getChapter, getExplore } from '../system/view'
+import { getChapter, getExplore, isProjectPage } from '../system/view'
 import { edgeGeometry, footprintGeometry, LABEL_ASPECT, labelTexture, solidGeometry, traceGeometry } from './geometry'
 import { nodeShape } from './nodeShapes'
 import { LABEL_FONT, PALETTE } from './palette'
@@ -38,15 +43,24 @@ const LABEL_HEIGHT = 0.02
 const PACKET_Y = 0.14
 const PACKET_SPEED = 10
 const BEAT_SPEED = 5
-const BEAT_EVERY = 1.3
-const MAX_PACKETS = 40
+const BEAT_EVERY = 0.4
+const MAX_PACKETS = 64
 const TRAIL = 4
 const TRAIL_GAP = 0.2
-/** на широком экране карта сдвинута вправо, текст стоит слева */
 const WIDE = 1100
-const SHIFT_X = 0.22
-const SHIFT_Y_WIDE = 0.05
+/** страница проекта на широком экране: текст справа, карта сдвинута влево */
+const SHIFT_PROJECT_X = 0.2
+/** первый экран главной: заголовок внизу, карта поднята */
+const SHIFT_HERO_Y = 0.13
 const SHIFT_Y_NARROW = 0.12
+/** сборка карты при загрузке: длительность и задержка между узлами, секунды */
+const INTRO_TIME = 1.1
+const INTRO_STAGGER = 0.09
+/** медленный поворот камеры, градусы и радианы в секунду */
+const DRIFT_ANGLE = 7
+const DRIFT_SPEED = 0.16
+const SCAN_SIZE = 1.75
+const RIPPLE_TIME = 1.6
 
 const color = (hex: string) => new Color(hex)
 const C = {
@@ -74,6 +88,10 @@ const GRID_FRAGMENT = /* glsl */ `
   uniform vec3 uColor;
   uniform vec2 uFocus;
   uniform float uRadius;
+  uniform vec3 uAccent;
+  uniform vec2 uPointer;
+  uniform float uPointerOn;
+  uniform vec3 uRipple;
   varying vec2 vWorld;
   float grid(vec2 p) {
     vec2 w = fwidth(p);
@@ -84,7 +102,13 @@ const GRID_FRAGMENT = /* glsl */ `
   void main() {
     float lines = grid(vWorld) * 0.5 + grid(vWorld / 5.0) * 0.9;
     float fade = 1.0 - smoothstep(uRadius * 0.3, uRadius, distance(vWorld, uFocus));
-    gl_FragColor = vec4(uColor, lines * fade);
+    // сетка ярче под курсором
+    float near = (1.0 - smoothstep(0.0, 4.5, distance(vWorld, uPointer))) * uPointerOn;
+    // волна от клика и от пришедшего пакета: кольцо расходится от точки uRipple.xy
+    float age = uRipple.z;
+    float ring = (1.0 - smoothstep(0.0, 1.6, abs(distance(vWorld, uRipple.xy) - age * 16.0))) * max(0.0, 1.0 - age / 1.6);
+    vec3 tint = mix(uColor, uAccent, clamp(ring, 0.0, 1.0));
+    gl_FragColor = vec4(tint, lines * fade * (1.0 + near * 1.4 + ring * 3.0));
   }
 `
 
@@ -137,6 +161,9 @@ function buildMap() {
   root.add(sun)
 
   const footprint = footprintGeometry()
+  const scanGeometry = new BufferGeometry()
+  const h = SCAN_SIZE
+  scanGeometry.setAttribute('position', new Float32BufferAttribute([-h, 0, -h, h, 0, -h, h, 0, h, -h, 0, h], 3))
   const nodes = NODE_IDS.map((id) => {
     const shape = nodeShape(id)
     const def = NODES[id]
@@ -154,14 +181,22 @@ function buildMap() {
       sizeAttenuation: false,
       fog: false,
     })
+    const edges = edgeGeometry(shape.boxes)
+    // отражение в «полу»: те же рёбра, перевёрнутые и приглушённые
+    const mirrorMat = new LineBasicMaterial({ color: C.edge, transparent: true, opacity: 0.16, depthWrite: false })
+    const mirror = new LineSegments(edges, mirrorMat)
+    mirror.scale.y = -1
     const body = new Group()
-    body.add(new Mesh(solidGeometry(shape.boxes), solidMat), new LineSegments(edgeGeometry(shape.boxes), edgeMat))
+    body.add(new Mesh(solidGeometry(shape.boxes), solidMat), new LineSegments(edges, edgeMat), mirror)
+    // рамка, которая ходит вверх-вниз по узлу в фокусе
+    const scanMat = new LineBasicMaterial({ color: C.accent, transparent: true, opacity: 0, depthWrite: false })
+    const scan = new LineLoop(scanGeometry, scanMat)
     const label = new Sprite(labelMat)
     label.scale.set(LABEL_HEIGHT * LABEL_ASPECT, LABEL_HEIGHT, 1)
     label.renderOrder = 10
-    group.add(body, new LineSegments(footprint, footMat), label)
+    group.add(body, new LineSegments(footprint, footMat), label, scan)
     root.add(group)
-    return { id, body, solidMat, edgeMat, footMat, label, labelMat, height: shape.height, lift: 1, focus: 0, kick: 0 }
+    return { id, body, solidMat, edgeMat, mirrorMat, footMat, label, labelMat, scan, scanMat, height: shape.height, lift: 1, focus: 0, kick: 0 }
   })
 
   const traces = EDGES.map((edge) => {
@@ -173,7 +208,15 @@ function buildMap() {
   const grid = new ShaderMaterial({
     vertexShader: GRID_VERTEX,
     fragmentShader: GRID_FRAGMENT,
-    uniforms: { uColor: { value: color(PALETTE.grid) }, uFocus: { value: new Vector2() }, uRadius: { value: 40 } },
+    uniforms: {
+      uColor: { value: color(PALETTE.grid) },
+      uAccent: { value: color(PALETTE.accent) },
+      uFocus: { value: new Vector2() },
+      uRadius: { value: 40 },
+      uPointer: { value: new Vector2() },
+      uPointerOn: { value: 0 },
+      uRipple: { value: new Vector3(0, 0, 99) },
+    },
     transparent: true,
     depthWrite: false,
     side: DoubleSide,
@@ -221,6 +264,9 @@ export function SystemScene({ posterChapter, onReady }: SystemSceneProps) {
   const rig = useRef<Shot & { started: boolean }>({ ...SHOTS[0], started: false })
   const frames = useRef(0)
   const beat = useRef(0)
+  const clock = useRef(0)
+  const shift = useRef({ x: 0, y: 0, started: false })
+  const pointerOn = useRef(false)
   const beatRef = useRef<() => void>(() => undefined)
   const { camera, scene, size } = useThree()
   const still = posterChapter !== null
@@ -239,20 +285,7 @@ export function SystemScene({ posterChapter, onReady }: SystemSceneProps) {
     }
   }, [scene, map])
 
-  // сдвиг точки схода: карта стоит правее (широкий экран) или выше (узкий) центра
-  useEffect(() => {
-    const view = camera as PerspectiveCamera
-    const wide = size.width >= WIDE
-    view.setViewOffset(
-      size.width,
-      size.height,
-      wide ? -size.width * SHIFT_X : 0,
-      size.height * (wide ? SHIFT_Y_WIDE : SHIFT_Y_NARROW),
-      size.width,
-      size.height,
-    )
-    return () => view.clearViewOffset()
-  }, [camera, size])
+  useEffect(() => () => (camera as PerspectiveCamera).clearViewOffset(), [camera])
 
   // подписи перерисовываются, когда загрузится шрифт
   useEffect(() => {
@@ -283,7 +316,10 @@ export function SystemScene({ posterChapter, onReady }: SystemSceneProps) {
     }
     const stop = onSystemEvent((event: SystemEvent) => {
       if (event.route) spawn(event.route, C.accent, PACKET_SPEED, 0.2)
-      if (event.broadcast) EDGES.forEach((edge) => spawn([edge.from, edge.to], C.accent, PACKET_SPEED, 0.2))
+      if (event.broadcast) {
+        EDGES.forEach((edge) => spawn([edge.from, edge.to], C.accent, PACKET_SPEED, 0.2))
+        map.grid.uniforms.uRipple.value.set(rig.current.x, rig.current.z, 0)
+      }
       event.kick?.forEach((id) => {
         map.nodes[NODE_IDS.indexOf(id)].kick = 1
       })
@@ -297,6 +333,7 @@ export function SystemScene({ posterChapter, onReady }: SystemSceneProps) {
       if (event.pointerType !== 'mouse') return
       pointer.current.x = (event.clientX / window.innerWidth) * 2 - 1
       pointer.current.y = (event.clientY / window.innerHeight) * 2 - 1
+      pointerOn.current = true
     }
     window.addEventListener('pointermove', onPointer, { passive: true })
     return () => {
@@ -308,20 +345,39 @@ export function SystemScene({ posterChapter, onReady }: SystemSceneProps) {
   const dummy = useMemo(() => new Object3D(), [])
   const point = useMemo(() => new Vector3(), [])
   const mixed = useMemo(() => new Color(), [])
+  const raycaster = useMemo(() => new Raycaster(), [])
+  const groundPlane = useMemo(() => new Plane(new Vector3(0, 1, 0), 0), [])
+  const ndc = useMemo(() => new Vector2(), [])
 
   useFrame((_, rawDelta) => {
     const dt = Math.min(rawDelta, 0.05)
     const chapter = still ? (posterChapter as number) : getChapter()
     const ease = (lambda: number) => (still || !rig.current.started ? 1 : 1 - Math.exp(-lambda * dt))
+    if (!still) clock.current += dt
+    const time = clock.current
+    const wide = size.width >= WIDE
+    const project = still ? (posterChapter as number) >= 1 && (posterChapter as number) <= 5 : isProjectPage()
+    const explore = still ? 0 : getExplore()
+
+    // точка схода: на странице проекта карта левее центра, на первом экране главной выше
+    const wantX = wide && project ? SHIFT_PROJECT_X : 0
+    const wantY = wide ? (project ? 0.03 : SHIFT_HERO_Y * (1 - explore) * (chapter === null ? 1 : 0.3)) : SHIFT_Y_NARROW
+    const sh = shift.current
+    const kShift = still || !sh.started ? 1 : 1 - Math.exp(-3.2 * dt)
+    sh.x += (wantX - sh.x) * kShift
+    sh.y += (wantY - sh.y) * kShift
+    sh.started = true
+    ;(camera as PerspectiveCamera).setViewOffset(size.width, size.height, size.width * sh.x, size.height * sh.y, size.width, size.height)
 
     // камера: на проекте стоит у его узла, иначе общий вид, который опускается к карте по скроллу
-    const want = chapter === null ? mixShot(SHOTS[0], EXPLORE_SHOT, getExplore()) : SHOTS[chapter]
+    const want = chapter === null ? mixShot(SHOTS[0], EXPLORE_SHOT, explore) : SHOTS[chapter]
     const r = rig.current
     const k = ease(3.2)
     r.x += (want.x - r.x) * k
     r.z += (want.z - r.z) * k
     r.dist += (want.dist - r.dist) * k
-    r.azimuth += (want.azimuth + pointer.current.x * 5 - r.azimuth) * k
+    const drift = Math.sin(time * DRIFT_SPEED) * DRIFT_ANGLE * (chapter === null ? 1 : 0.5)
+    r.azimuth += (want.azimuth + drift + pointer.current.x * 5 - r.azimuth) * k
     r.polar += (want.polar - pointer.current.y * 2.5 - r.polar) * k
     r.narrow += (want.narrow - r.narrow) * k
     r.started = true
@@ -343,26 +399,40 @@ export function SystemScene({ posterChapter, onReady }: SystemSceneProps) {
     }
     map.grid.uniforms.uFocus.value.set(r.x, r.z)
     map.grid.uniforms.uRadius.value = dist * 1.15
+    const ripple = map.grid.uniforms.uRipple.value as Vector3
+    if (ripple.z < RIPPLE_TIME) ripple.z += dt
+    // курсор на «полу»: сетка под ним ярче
+    const pointerUniform = map.grid.uniforms.uPointerOn
+    pointerUniform.value += ((pointerOn.current ? 1 : 0) - pointerUniform.value) * ease(4)
+    if (pointerOn.current) {
+      raycaster.setFromCamera(ndc.set(pointer.current.x, -pointer.current.y), camera)
+      if (raycaster.ray.intersectPlane(groundPlane, point)) (map.grid.uniforms.uPointer.value as Vector2).set(point.x, point.z)
+    }
 
     // узлы
     const kNode = ease(5)
-    map.nodes.forEach((node) => {
+    map.nodes.forEach((node, index) => {
       const [focus, lift] = chapterState(chapter ?? 0, node.id)
+      // при загрузке узлы поднимаются из «пола» по очереди
+      const grown = still ? 1 : MathUtils.smoothstep((time - index * INTRO_STAGGER) / INTRO_TIME, 0, 1)
       node.focus += (focus - node.focus) * kNode
-      node.lift += (lift - node.lift) * kNode
+      node.lift += (lift * grown - node.lift) * (still ? 1 : 1 - Math.exp(-9 * dt))
       node.kick = Math.max(0, node.kick - dt * 2.2)
       const bump = 1 + node.kick * 0.05
-      node.body.scale.set(bump, node.lift * bump, bump)
+      node.body.scale.set(bump, Math.max(0.001, node.lift * bump), bump)
+      node.scan.position.y = (0.5 + 0.5 * Math.sin(time * 1.7 + index)) * node.height * node.lift
+      node.scanMat.opacity = still ? 0 : node.focus * 0.9
       node.label.position.y = node.height * node.lift + 0.55
       const raised = (node.lift - LOW) / (1 - LOW)
       mixed.lerpColors(C.edgeDim, C.edge, raised)
       node.edgeMat.color.copy(mixed).lerp(C.accent, Math.max(node.focus, node.kick * 0.9))
+      node.mirrorMat.color.copy(node.edgeMat.color)
       node.solidMat.color.lerpColors(C.solid, C.solidOn, node.focus)
       node.footMat.color.lerpColors(C.edgeDim, C.accent, node.focus)
       node.labelMat.color.lerpColors(C.label, C.labelOn, Math.max(node.focus, node.kick))
       node.labelMat.opacity = 0.45 + 0.55 * Math.max(raised, node.focus)
-      // кнопка узла в интерфейсе стоит на середине его высоты
-      point.set(NODES[node.id].x, node.height * node.lift * 0.5, NODES[node.id].z).project(camera)
+      // кнопка и подпись узла в интерфейсе привязаны к его основанию
+      point.set(NODES[node.id].x, 0, NODES[node.id].z).project(camera)
       placeHotspot(node.id, (point.x * 0.5 + 0.5) * size.width, (0.5 - point.y * 0.5) * size.height, point.z < 1)
     })
     map.traces.forEach((trace) => {
@@ -384,6 +454,7 @@ export function SystemScene({ posterChapter, onReady }: SystemSceneProps) {
         packet.dist -= packet.legs[packet.leg].total
         const arrived = map.nodes[NODE_IDS.indexOf(packet.legs[packet.leg].to)]
         if (packet.color === C.accent) arrived.kick = 1
+        if (packet.color === C.accent && packet.leg === packet.legs.length - 1) ripple.set(NODES[arrived.id].x, NODES[arrived.id].z, 0.25)
         packet.leg += 1
         if (packet.leg >= packet.legs.length) return false
       }

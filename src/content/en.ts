@@ -222,7 +222,7 @@ export const en: Content = {
   },
   offer: {
     title: 'What I can build',
-    hint: 'Click a row or a map node: I will show the project where it already works.',
+    hint: 'Click a service: I will show the project where it already works.',
     items: [
       { name: 'Website or landing page with lead forms', text: 'Requests arrive in Telegram and by email' },
       { name: 'Catalogue with an admin panel', text: 'Filters, search, client account, Excel export' },
@@ -232,6 +232,7 @@ export const en: Content = {
       { name: 'LLM integration', text: 'Scoring and parsing data with a language model' },
       { name: 'Real-time dashboards', text: 'Live data and Telegram alerts' },
       { name: 'Integrations and automation', text: 'Site, bot, CRM and spreadsheets work together' },
+      { name: 'Queues and background jobs', text: 'Priorities, retries, worker health' },
     ],
   },
 }

@@ -27,6 +27,7 @@ function subscribe(fn: () => void): () => void {
 /** Глава, на которой стоит камера; null — общий вид. */
 export const getChapter = (): number | null => state.route ?? state.selected
 export const getExplore = (): number => state.explore
+export const isProjectPage = (): boolean => state.route !== null
 export const onViewChange = subscribe
 
 export function select(chapter: number | null): void {
@@ -60,6 +61,8 @@ export function useExploreScroll(target: string): void {
     let frame = 0
     const measure = () => {
       state.explore = clamp01(1 - section.getBoundingClientRect().top / window.innerHeight)
+      // подписи услуг у узлов проявляются вместе с подъездом камеры
+      document.documentElement.style.setProperty('--explore', state.explore.toFixed(3))
     }
     const update = () => {
       frame = 0
@@ -78,6 +81,7 @@ export function useExploreScroll(target: string): void {
       window.removeEventListener('scroll', schedule)
       window.removeEventListener('resize', schedule)
       state.explore = 0
+      document.documentElement.style.removeProperty('--explore')
     }
   }, [target])
 }

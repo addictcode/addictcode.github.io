@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { useLang } from '../i18n/LangContext'
 import { hasWebGL, pickStageMode } from '../system/capability'
-import { useChapter } from '../system/view'
+import { useRoute } from '../system/view'
 import { Hotspots } from './Hotspots'
 
 const SystemCanvas = lazy(() => import('../scene/SystemCanvas'))
@@ -58,7 +58,8 @@ export function Stage() {
   const [mode, setMode] = useState(pickStageMode)
   const [load, setLoad] = useState(false)
   const [ready, setReady] = useState(false)
-  const active = useChapter() ?? 0
+  // на главной кадр общий: проект выбирается на живой карте, а в статичной версии — в списке услуг
+  const active = useRoute() ?? 0
 
   useEffect(() => {
     if (mode !== 'live') return

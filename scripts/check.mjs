@@ -47,7 +47,14 @@ for (const [name, viewport] of [
   await toOffer(page)
   await page.waitForTimeout(1800)
   await page.screenshot({ path: `${OUT}/${name}-home-map.png` })
-  ok((await page.locator('.offer button').count()) === 8, 'в списке 8 услуг')
+  const desktop = name.startsWith('desktop')
+  // на широком экране услуги подписаны у узлов карты, на узком идут списком под картой
+  const pick = (id, node) => (desktop ? page.locator(`.hotspot[data-node="${node}"]`) : page.locator(`.offer button[data-offer="${id}"]`).first())
+  ok((await page.locator('.offer button').count()) === 9, 'в списке 9 услуг')
+  if (desktop) {
+    ok((await page.locator('.hotspot__tag:visible').count()) === 9, 'у каждого узла карты видна подпись')
+    ok(!(await page.locator('.offer').isVisible()), 'список скрыт: услуги подписаны на карте')
+  }
   ok((await page.locator('.card').count()) === 0, 'пока ничего не выбрано, карточки нет')
 
   // узел карты выбирает проект
@@ -58,13 +65,13 @@ for (const [name, viewport] of [
   await page.screenshot({ path: `${OUT}/${name}-home-selected.png` })
 
   // строка услуги выбирает проект, кнопка «Закрыть» снимает выбор
-  await page.locator('.offer button[data-offer="crm"]').first().click()
-  ok((await page.locator('.card[data-card="crm"]').count()) === 1, 'строка услуги открыла карточку CRM')
+  await pick('crm', 'db').click()
+  ok((await page.locator('.card[data-card="crm"]').count()) === 1, 'услуга открыла карточку CRM')
   await page.locator('.card__close').click()
   ok((await page.locator('.card').count()) === 0, 'карточка закрывается')
 
   // из карточки на страницу проекта и обратно
-  await page.locator('.offer button[data-offer="site"]').first().click()
+  await pick('site', 'site').click()
   await page.locator('.card a.btn').click()
   await page.waitForSelector('article#site')
   ok(new URL(page.url()).hash === '#/site', 'карточка ведёт на страницу проекта')
@@ -196,7 +203,7 @@ for (const [name, options, init] of [
   await toOffer(page)
   await page.locator('.offer button[data-offer="parsing"]').first().click()
   ok((await page.locator('.card[data-card="parsing"]').count()) === 1, 'строка услуги открывает карточку и без карты')
-  ok(await posterShown(5), 'показан кадр карты для выбранного проекта')
+  ok(await posterShown(0), 'на главной показан общий кадр карты')
   await page.screenshot({ path: `${OUT}/${name}-home.png` })
   await page.goto(`${site.url}#/site`)
   await page.waitForSelector('article#site')
