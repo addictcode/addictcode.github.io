@@ -8,7 +8,7 @@ import { ExternalLink } from './Links'
 import { ProjectContent } from './ProjectContent'
 import { projectSummary } from './projectSummary'
 
-/** Страница проекта: полный разбор слева, карта с узлом проекта справа. */
+/** Страница проекта: полный разбор справа, карта с узлом проекта слева. */
 export function ProjectPage({ chapter }: { chapter: number }) {
   const { t } = useLang()
   const id = chapterIds[chapter]
@@ -19,7 +19,7 @@ export function ProjectPage({ chapter }: { chapter: number }) {
   }, [chapter])
 
   return (
-    <article id={id} className="chapter" aria-labelledby="project-title">
+    <article id={id} className="chapter chapter--project" aria-labelledby="project-title">
       <div className="chapter__window" aria-hidden="true" />
       <div className="chapter__body">
         <a className="back mono" href="#/" data-log="off">

@@ -66,7 +66,7 @@ export interface Shot {
 }
 
 export const SHOTS: Shot[] = [
-  { x: 3, z: -0.5, dist: 54, azimuth: 32, polar: 52, narrow: 1.55 },
+  { x: 1.5, z: -0.5, dist: 45, azimuth: 32, polar: 56, narrow: 1.85 },
   { x: -5, z: 1, dist: 21, azimuth: 18, polar: 56, narrow: 1.2 },
   { x: 0, z: 5.6, dist: 20, azimuth: -28, polar: 58, narrow: 1.2 },
   { x: 4.3, z: 0.8, dist: 25, azimuth: 36, polar: 54, narrow: 1.2 },
@@ -75,8 +75,8 @@ export const SHOTS: Shot[] = [
   { x: -3, z: 2, dist: 40, azimuth: -52, polar: 60, narrow: 1.5 },
 ]
 
-/** Общий вид карты на главной, когда посетитель долистал до блока с услугами: ближе и круче сверху. */
-export const EXPLORE_SHOT: Shot = { x: 3.5, z: -0.5, dist: 50, azimuth: 14, polar: 42, narrow: 1.5 }
+/** Общий вид карты на главной, когда посетитель долистал до блока с услугами: карта по центру, ближе и круче сверху. */
+export const EXPLORE_SHOT: Shot = { x: 1.5, z: -0.5, dist: 43, azimuth: 14, polar: 44, narrow: 1.75 }
 
 /** Какую главу открывает узел по клику. */
 export const NODE_CHAPTER: Record<NodeId, number> = {
@@ -91,8 +91,23 @@ export const NODE_CHAPTER: Record<NodeId, number> = {
   llm: 5,
 }
 
-/** Глава, в которой услуга уже работает. Порядок совпадает с `offer.items` в контенте. */
-export const OFFER_CHAPTER = [1, 1, 2, 3, 5, 5, 4, 3]
+/** Какие услуги подписаны у узла: номера строк `offer.items` в контенте. */
+export const NODE_OFFERS: Record<NodeId, number[]> = {
+  client: [],
+  site: [0, 1],
+  bot: [2],
+  crm: [3],
+  parser: [4],
+  llm: [5],
+  stream: [6],
+  db: [7],
+  queue: [8],
+}
+
+/** Глава, в которой услуга уже работает: по номеру строки `offer.items`. */
+export const OFFER_CHAPTER: number[] = NODE_IDS.flatMap((id) => NODE_OFFERS[id].map((offer) => [offer, NODE_CHAPTER[id]]))
+  .sort((a, b) => a[0] - b[0])
+  .map(([, chapter]) => chapter)
 
 /** Кратчайший маршрут по связям, без учёта направления. */
 export function route(from: NodeId, to: NodeId): NodeId[] {

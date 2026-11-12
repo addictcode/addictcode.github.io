@@ -1,15 +1,17 @@
 import { chapterIds } from '../content'
 import { useLang } from '../i18n/LangContext'
 import { emit } from '../system/bus'
-import { NODE_CHAPTER, NODE_IDS, NODES, type NodeId } from '../system/graph'
+import { NODE_CHAPTER, NODE_IDS, NODE_OFFERS, NODES, type NodeId } from '../system/graph'
+import { profile } from '../content/profile'
 import { registerHotspot } from '../system/hotspots'
 import { select, useChapter, useRoute } from '../system/view'
 
 const CONTACT = 6
 
 /**
- * Невидимые кнопки поверх узлов карты: узел можно нажать мышью, пальцем и с клавиатуры.
- * На главной клик выбирает проект, на странице проекта ведёт на страницу другого.
+ * Кнопки поверх узлов карты: узел можно нажать мышью, пальцем и с клавиатуры.
+ * На главной у каждого узла висит подпись с услугами, клик выбирает проект;
+ * на странице проекта подписей нет, клик ведёт на страницу другого проекта.
  */
 export function Hotspots() {
   const { t } = useLang()
@@ -23,7 +25,7 @@ export function Hotspots() {
   }
 
   return (
-    <div className="hotspots">
+    <div className="hotspots" data-tags={route === null || undefined} data-selected={(route === null && current !== null) || undefined}>
       {NODE_IDS.map((id) => (
         <button
           key={id}
@@ -37,7 +39,11 @@ export function Hotspots() {
           onPointerEnter={() => emit({ kick: [id] })}
           onFocus={() => emit({ kick: [id] })}
           onClick={() => open(id)}
-        />
+        >
+          <span className="hotspot__tag" aria-hidden="true">
+            {id === 'client' ? <b>@{profile.telegram}</b> : NODE_OFFERS[id].map((offer) => <b key={offer}>{t.offer.items[offer].name}</b>)}
+          </span>
+        </button>
       ))}
     </div>
   )
