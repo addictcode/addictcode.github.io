@@ -30,7 +30,7 @@ import {
   Vector3,
 } from 'three'
 import { onSystemEvent, type SystemEvent } from '../system/bus'
-import { CHAPTER_FOCUS, EDGES, EXPLORE_SHOT, NODE_IDS, NODES, SHOTS, type NodeId, type Shot } from '../system/graph'
+import { CHAPTER_FOCUS, EDGES, EXPLORE_SHOT, OVERVIEW_CHAPTERS, NODE_IDS, NODES, SHOTS, type NodeId, type Shot } from '../system/graph'
 import { placeHotspot } from '../system/hotspots'
 import { getChapter, getExplore, isProjectPage } from '../system/view'
 import { edgeGeometry, footprintGeometry, LABEL_ASPECT, labelTexture, solidGeometry, traceGeometry } from './geometry'
@@ -55,7 +55,7 @@ const SHIFT_HERO_Y = 0.13
 const SHIFT_Y_NARROW = 0.12
 /** сборка карты при загрузке: длительность и задержка между узлами, секунды */
 const INTRO_TIME = 1.1
-const INTRO_STAGGER = 0.09
+const INTRO_STAGGER = 0.06
 /** медленный поворот камеры, градусы и радианы в секунду */
 const DRIFT_ANGLE = 7
 const DRIFT_SPEED = 0.16
@@ -236,7 +236,7 @@ function buildMap() {
 /** Вклад главы в состояние узла: в фокусе ли он и поднят ли в полный рост. */
 function chapterState(chapter: number, id: NodeId): [focus: number, lift: number] {
   const focused = CHAPTER_FOCUS[chapter].includes(id)
-  const overview = chapter === 0 || chapter === CHAPTER_FOCUS.length - 1
+  const overview = OVERVIEW_CHAPTERS.includes(chapter)
   return [focused ? 1 : 0, focused || overview ? 1 : LOW]
 }
 
@@ -356,7 +356,7 @@ export function SystemScene({ posterChapter, onReady }: SystemSceneProps) {
     if (!still) clock.current += dt
     const time = clock.current
     const wide = size.width >= WIDE
-    const project = still ? (posterChapter as number) >= 1 && (posterChapter as number) <= 5 : isProjectPage()
+    const project = still ? !OVERVIEW_CHAPTERS.includes(posterChapter as number) : isProjectPage()
     const explore = still ? 0 : getExplore()
 
     // точка схода: на странице проекта карта левее центра, на первом экране главной выше

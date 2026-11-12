@@ -1,5 +1,7 @@
 import { links } from '../content/profile'
 import { LeadDemo } from '../demos/LeadDemo'
+import { LabDemo } from '../lab/LabDemo'
+import { FIRST_LAB_CHAPTER } from '../system/graph'
 import { MonitorDemo } from '../demos/MonitorDemo'
 import { useLang } from '../i18n/LangContext'
 import { CaseDetails } from './CaseDetails'
@@ -103,6 +105,6 @@ export function ProjectContent({ chapter }: { chapter: number }) {
         </>
       )
     default:
-      return null
+      return chapter >= FIRST_LAB_CHAPTER ? <LabDemo chapter={chapter} /> : null
   }
 }

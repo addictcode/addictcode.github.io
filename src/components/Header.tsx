@@ -2,6 +2,7 @@ import { chapterIds, languages } from '../content'
 import { telegramUrl } from '../content/profile'
 import { useLang } from '../i18n/LangContext'
 import { emit } from '../system/bus'
+import { FIRST_LAB_CHAPTER } from '../system/graph'
 import { useChapter } from '../system/view'
 
 const PROJECTS = [1, 2, 3, 4, 5]
@@ -30,6 +31,11 @@ export function Header() {
               </a>
             </li>
           ))}
+          <li>
+            <a href={`#/${chapterIds[FIRST_LAB_CHAPTER]}`} aria-current={current !== null && current >= FIRST_LAB_CHAPTER ? 'page' : undefined} data-log="off">
+              {t.ui.demo}
+            </a>
+          </li>
         </ol>
       </nav>
       <div className="topbar__tools">

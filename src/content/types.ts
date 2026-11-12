@@ -1,3 +1,5 @@
+import type { labRu } from './lab.ru'
+
 export type Lang = 'ru' | 'en'
 
 export interface Fact {
@@ -144,4 +146,6 @@ export interface Content {
     hint: string
     items: { name: string; text: string }[]
   }
+  /** страница «Демо»: прототипы на выдуманных данных */
+  lab: typeof labRu
 }

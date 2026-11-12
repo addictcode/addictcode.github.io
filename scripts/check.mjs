@@ -1,11 +1,13 @@
 // Сквозная проверка собранного сайта в Chromium:
 // главная (вступление, карта, выбор проекта узлом и строкой услуги), страницы проектов,
-// горизонтальный скролл, оба демо, переключатель языка, режимы без WebGL и с prefers-reduced-motion.
+// горизонтальный скролл, оба демо, шесть прототипов, переключатель языка, режимы без WebGL и с prefers-reduced-motion.
 // Запуск: npm run build && npm run check. Скриншоты ложатся в test-results/.
 import { mkdir } from 'node:fs/promises'
 import { launchBrowser, startSite } from './browser.mjs'
 
 const PROJECTS = ['site', 'bot', 'crm', 'realtime', 'parsing']
+const LABS = ['booking', 'shop', 'assistant', 'leads', 'prices', 'cabinet']
+const PAGES = [...PROJECTS, ...LABS]
 const OUT = 'test-results'
 const failures = []
 const ok = (condition, message) => {
@@ -50,9 +52,9 @@ for (const [name, viewport] of [
   const desktop = name.startsWith('desktop')
   // на широком экране услуги подписаны у узлов карты, на узком идут списком под картой
   const pick = (id, node) => (desktop ? page.locator(`.hotspot[data-node="${node}"]`) : page.locator(`.offer button[data-offer="${id}"]`).first())
-  ok((await page.locator('.offer button').count()) === 9, 'в списке 9 услуг')
+  ok((await page.locator('.offer button').count()) === 15, 'в списке 15 услуг')
   if (desktop) {
-    ok((await page.locator('.hotspot__tag:visible').count()) === 9, 'у каждого узла карты видна подпись')
+    ok((await page.locator('.hotspot__tag:visible').count()) === 15, 'у каждого узла карты видна подпись')
     ok(!(await page.locator('.offer').isVisible()), 'список скрыт: услуги подписаны на карте')
   }
   ok((await page.locator('.card').count()) === 0, 'пока ничего не выбрано, карточки нет')
@@ -80,7 +82,7 @@ for (const [name, viewport] of [
   ok((await page.locator('.card[data-card="site"]').count()) === 1, 'после возврата проект остаётся выбранным')
   ok((await overflow(page)) <= 0, 'главная: нет горизонтального скролла')
 
-  for (const id of PROJECTS) {
+  for (const id of PAGES) {
     await page.goto(`${site.url}#/${id}`)
     await page.waitForSelector(`article#${id}`)
     await page.waitForTimeout(1600)
@@ -132,6 +134,69 @@ console.log('\nдемо: заявка → бот → CRM → дашборд')
   await context.close()
 }
 
+/* 3б. Демо-прототипы */
+console.log('\nдемо-прототипы')
+{
+  const { context, page } = await open()
+  const go = async (id) => {
+    await page.goto(`${site.url}#/${id}`)
+    await page.waitForSelector(`.lab[data-lab="${id}"]`)
+    return page.locator('.lab')
+  }
+
+  let lab = await go('booking')
+  await lab.locator('.opts .btn').first().click()
+  await lab.locator('.opts .btn').first().click()
+  await lab.locator('.opts .btn:not([disabled])').first().click()
+  await lab.locator('[data-action="pay"]').click()
+  ok((await lab.locator('[data-done]').count()) === 1 && (await lab.locator('.table tbody tr').count()) === 3, 'запись: бот подтвердил, запись появилась в админке')
+  ok((await lab.locator('[data-kpi="revenue"]').textContent()).trim().startsWith('65'), 'запись: оплата попала в выручку')
+  await lab.screenshot({ path: `${OUT}/lab-booking.png` })
+
+  lab = await go('shop')
+  await lab.locator('[data-add="0"]').click()
+  await lab.locator('[data-add="2"]').click()
+  ok((await lab.locator('[data-kpi="total"]').textContent()).trim().startsWith('36'), 'магазин: корзина считает сумму')
+  await lab.locator('[data-action="pay"]').click()
+  ok((await lab.locator('[data-order]').count()) === 1, 'магазин: продавец получил заказ')
+  await lab.screenshot({ path: `${OUT}/lab-shop.png` })
+
+  lab = await go('assistant')
+  await lab.locator('.opts .btn').nth(0).click()
+  ok((await lab.locator('[data-answer="kb"]').count()) === 1, 'ассистент: ответил по базе знаний')
+  await lab.locator('.opts .btn').nth(3).click()
+  ok((await lab.locator('[data-answer="handoff"]').count()) === 1, 'ассистент: без ответа передал оператору')
+  await lab.screenshot({ path: `${OUT}/lab-assistant.png` })
+
+  lab = await go('leads')
+  await lab.locator('input[name="name"]').fill('Тест Тестов')
+  await lab.locator('button[type="submit"]').click()
+  ok((await lab.locator('[data-stage="0"] [data-lead]').count()) === 1, 'заявки: заявка появилась в CRM')
+  await lab.locator('[data-action="move"]').click()
+  const stage = (await lab.locator('[data-stage="1"] .label').textContent()).trim()
+  ok((await lab.locator('[data-client-lead] .status').textContent()).trim() === stage, 'заявки: новый статус вернулся клиенту')
+  await lab.screenshot({ path: `${OUT}/lab-leads.png` })
+
+  lab = await go('prices')
+  for (let i = 0; i < 3; i += 1) await lab.locator('[data-action="check"]').click()
+  ok((await lab.locator('[data-kpi="checks"]').textContent()).trim() === '3', 'цены: три проверки прошли')
+  const download = page.waitForEvent('download', { timeout: 5000 }).then((file) => file.suggestedFilename(), () => '')
+  await lab.locator('[data-action="export"]').click()
+  ok((await download).endsWith('.csv'), 'цены: таблица скачивается')
+  await lab.screenshot({ path: `${OUT}/lab-prices.png` })
+
+  lab = await go('cabinet')
+  await lab.locator('input[name="name"]').fill('Тест Тестов')
+  await lab.locator('button[type="submit"]').click()
+  await lab.locator('[data-plan="2"]').click()
+  await lab.locator('[data-action="pay"]').click()
+  ok((await lab.locator('[data-cabinet="ready"]').count()) === 1, 'кабинет: подписка оформлена')
+  await lab.locator('[data-role="1"]').click()
+  ok((await lab.locator('[data-kpi="mrr"]').textContent()).trim().startsWith('146'), 'кабинет: админка считает выручку с новым пользователем')
+  await lab.screenshot({ path: `${OUT}/lab-cabinet.png` })
+  await context.close()
+}
+
 /* 4. Переключатель языка */
 console.log('\nязык')
 {
@@ -151,7 +216,7 @@ console.log('\nязык')
       return found
     })
   let left = await leftovers()
-  for (const id of PROJECTS) {
+  for (const id of PAGES) {
     await page.goto(`${site.url}#/${id}`)
     await page.waitForSelector(`article#${id}`)
     left = left.concat(await leftovers())

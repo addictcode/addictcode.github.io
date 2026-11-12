@@ -1,3 +1,4 @@
+import { labEn } from './lab.en'
 import type { Content } from './types'
 
 export const en: Content = {
@@ -23,7 +24,7 @@ export const en: Content = {
     projects: 'Projects',
     openProject: 'Open project',
   },
-  chapters: ['Start', 'Website', 'Bot', 'CRM', 'Real time', 'Scraping & LLM', 'Contact'],
+  chapters: ['Start', 'Website', 'Bot', 'CRM', 'Real time', 'Scraping & LLM', 'Contact', 'Booking', 'Shop', 'Assistant', 'Leads to CRM', 'Prices', 'Account'],
   hero: {
     name: 'Dmitry Shaibakov',
     role: 'backend developer',
@@ -233,6 +234,13 @@ export const en: Content = {
       { name: 'Real-time dashboards', text: 'Live data and Telegram alerts' },
       { name: 'Integrations and automation', text: 'Site, bot, CRM and spreadsheets work together' },
       { name: 'Queues and background jobs', text: 'Priorities, retries, worker health' },
+      { name: 'Booking bot with payment', text: 'Service, slot, payment, reminder' },
+      { name: 'Shop inside Telegram', text: 'Catalogue, cart, order to the seller' },
+      { name: 'Support assistant', text: 'Answers from a knowledge base, calls a human' },
+      { name: 'Integration with your CRM', text: 'Leads go in, statuses come back' },
+      { name: 'Price monitoring', text: 'Competitors, history, alerts, spreadsheet' },
+      { name: 'Account with a subscription', text: 'Plans, payment, roles, admin panel' },
     ],
   },
+  lab: labEn,
 }

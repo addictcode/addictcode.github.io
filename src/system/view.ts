@@ -7,12 +7,12 @@ import { chapterIds } from '../content'
  * explore — насколько главная прокручена от вступления к карте (0 … 1).
  * Сцена читает состояние в кадре без React, интерфейс подписывается на изменения.
  */
-const FIRST_PROJECT = 1
-const LAST_PROJECT = 5
+/** главы без своей страницы: вступление и контакты */
+const NO_PAGE = [0, 6]
 
 function readRoute(): number | null {
   const index = (chapterIds as readonly string[]).indexOf(location.hash.replace(/^#\//, ''))
-  return location.hash.startsWith('#/') && index >= FIRST_PROJECT && index <= LAST_PROJECT ? index : null
+  return location.hash.startsWith('#/') && index > 0 && !NO_PAGE.includes(index) ? index : null
 }
 
 const state = { route: readRoute(), selected: null as number | null, explore: 0 }

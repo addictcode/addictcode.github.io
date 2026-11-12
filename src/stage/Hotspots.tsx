@@ -1,7 +1,7 @@
 import { chapterIds } from '../content'
 import { useLang } from '../i18n/LangContext'
 import { emit } from '../system/bus'
-import { NODE_CHAPTER, NODE_IDS, NODE_OFFERS, NODES, type NodeId } from '../system/graph'
+import { FIRST_LAB_CHAPTER, NODE_CHAPTER, NODE_IDS, NODE_OFFERS, NODES, type NodeId } from '../system/graph'
 import { profile } from '../content/profile'
 import { registerHotspot } from '../system/hotspots'
 import { select, useChapter, useRoute } from '../system/view'
@@ -41,7 +41,12 @@ export function Hotspots() {
           onClick={() => open(id)}
         >
           <span className="hotspot__tag" aria-hidden="true">
-            {id === 'client' ? <b>@{profile.telegram}</b> : NODE_OFFERS[id].map((offer) => <b key={offer}>{t.offer.items[offer].name}</b>)}
+            {id === 'client' ? <b>@{profile.telegram}</b> : NODE_OFFERS[id].map((offer) => (
+              <b key={offer}>
+                {t.offer.items[offer].name}
+                {NODE_CHAPTER[id] >= FIRST_LAB_CHAPTER && <i className="mono">{t.lab.demoTag}</i>}
+              </b>
+            ))}
           </span>
         </button>
       ))}
