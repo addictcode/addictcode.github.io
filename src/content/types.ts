@@ -139,19 +139,6 @@ export interface Content {
     stackLabel: string
     footer: string
   }
-  /** разделы главной */
-  home: {
-    nav: { services: string; projects: string; demos: string; contact: string }
-    scroll: string
-    servicesTitle: string
-    servicesLead: string
-    projectsTitle: string
-    projectsLead: string
-    openCase: string
-    demosTitle: string
-    demosLead: string
-    openDemo: string
-  }
   /** услуги: порядок совпадает с `OFFER_CHAPTER` в `src/system/graph.ts` */
   offer: {
     title: string

@@ -12,6 +12,10 @@ export const PALETTE = {
   lane: '#232a32',
   laneText: '#59626d',
   pad: '#3b434d',
+  /** подложка колонки через одну */
+  lanePlate: '#141a21',
+  /** рёбра стоек на горизонте */
+  horizon: '#1f262e',
   traceOn: '#6f7985',
   grid: '#4b5563',
   label: '#7d858f',

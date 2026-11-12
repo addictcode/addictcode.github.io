@@ -1,20 +1,21 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { chapterIds } from '../content'
-import { CONTACT_CHAPTER } from './graph'
 
 /**
  * Что сейчас показывает карта.
- * route — открыта страница проекта; focus — проект, о котором посетитель читает на главной;
- * preview — проект под курсором (строка списка или узел карты);
- * hero — какая доля первого экрана ещё видна (1 … 0).
+ * route — открыта страница проекта; selected — проект выбран на главной;
+ * explore — насколько главная прокручена от вступления к карте (0 … 1).
  * Сцена читает состояние в кадре без React, интерфейс подписывается на изменения.
  */
+/** главы без своей страницы: вступление и контакты */
+const NO_PAGE = [0, 6]
+
 function readRoute(): number | null {
   const index = (chapterIds as readonly string[]).indexOf(location.hash.replace(/^#\//, ''))
-  return location.hash.startsWith('#/') && index > 0 && index !== CONTACT_CHAPTER ? index : null
+  return location.hash.startsWith('#/') && index > 0 && !NO_PAGE.includes(index) ? index : null
 }
 
-const state = { route: readRoute(), focus: null as number | null, preview: null as number | null, hero: 1 }
+const state = { route: readRoute(), selected: null as number | null, explore: 0 }
 const listeners = new Set<() => void>()
 const notify = () => listeners.forEach((fn) => fn())
 
@@ -23,72 +24,64 @@ function subscribe(fn: () => void): () => void {
   return () => listeners.delete(fn)
 }
 
-/** Глава, на которой стоит камера; null — общий вид карты. */
-export const getChapter = (): number | null => state.preview ?? state.route ?? state.focus
-export const getHero = (): number => state.hero
+/** Глава, на которой стоит камера; null — общий вид. */
+export const getChapter = (): number | null => state.route ?? state.selected
+export const getExplore = (): number => state.explore
 export const isProjectPage = (): boolean => state.route !== null
 export const onViewChange = subscribe
 
-/** Курсор или фокус на строке проекта или на узле: камера подлетает к нему, пока он там. */
-export function previewChapter(chapter: number | null): void {
-  if (chapter === state.preview) return
-  state.preview = chapter
-  notify()
-}
-
-function setFocus(chapter: number | null): void {
-  if (chapter === state.focus) return
-  state.focus = chapter
+export function select(chapter: number | null): void {
+  if (chapter === state.selected) return
+  state.selected = chapter
   notify()
 }
 
 window.addEventListener('hashchange', () => {
   const next = readRoute()
   if (next === state.route) return
+  // при возврате на главную проект остаётся выбранным на карте
+  state.selected = next === null ? state.route : null
   state.route = next
-  state.preview = null
   notify()
 })
 
 export const useRoute = (): number | null => useSyncExternalStore(subscribe, () => state.route)
+export const useSelected = (): number | null => useSyncExternalStore(subscribe, () => state.selected)
 export const useChapter = (): number | null => useSyncExternalStore(subscribe, getChapter)
 
-/**
- * Главная: камера идёт к проекту, о котором посетитель сейчас читает.
- * Блок помечается атрибутом `data-chapter`; блок без номера (`data-chapter=""`) — общий вид карты.
- */
-export function useChapterScroll(): void {
+const clamp01 = (value: number) => Math.min(1, Math.max(0, value))
+/** выше этой доли выбор проекта сбрасывается: посетитель вернулся ко вступлению */
+const KEEP_SELECTION = 0.25
+
+/** Скролл главной → explore: камера опускается к карте, пока блок с услугами входит в экран. */
+export function useExploreScroll(target: string): void {
   useEffect(() => {
-    const hero = document.getElementById('intro')
+    const section = document.querySelector<HTMLElement>(target)
+    if (!section) return
     let frame = 0
+    const measure = () => {
+      state.explore = clamp01(1 - section.getBoundingClientRect().top / window.innerHeight)
+      // подписи услуг у узлов проявляются вместе с подъездом камеры
+      document.documentElement.style.setProperty('--explore', state.explore.toFixed(3))
+    }
     const update = () => {
       frame = 0
-      const middle = window.innerHeight * 0.5
-      let found: number | null = null
-      document.querySelectorAll<HTMLElement>('[data-chapter]').forEach((element) => {
-        const box = element.getBoundingClientRect()
-        if (box.top <= middle && box.bottom > middle) found = element.dataset.chapter ? Number(element.dataset.chapter) : null
-      })
-      setFocus(found)
-      if (hero) {
-        const box = hero.getBoundingClientRect()
-        state.hero = Math.min(1, Math.max(0, box.bottom / box.height))
-        document.documentElement.style.setProperty('--hero', state.hero.toFixed(3))
-      }
+      measure()
+      if (state.explore < KEEP_SELECTION && state.selected !== null) select(null)
     }
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(update)
     }
-    update()
+    // при входе на главную выбор не сбрасывается: страница ещё подъедет к карте
+    measure()
     window.addEventListener('scroll', schedule, { passive: true })
     window.addEventListener('resize', schedule)
     return () => {
       cancelAnimationFrame(frame)
       window.removeEventListener('scroll', schedule)
       window.removeEventListener('resize', schedule)
-      state.focus = null
-      state.hero = 0
-      document.documentElement.style.removeProperty('--hero')
+      state.explore = 0
+      document.documentElement.style.removeProperty('--explore')
     }
-  }, [])
+  }, [target])
 }

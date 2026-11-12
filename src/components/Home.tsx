@@ -1,176 +1,135 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect } from 'react'
 import { chapterIds } from '../content'
 import { githubUrl, profile, telegramUrl } from '../content/profile'
 import { useLang } from '../i18n/LangContext'
-import { CONTACT_CHAPTER, LAB_CHAPTERS, OFFER_CHAPTER, PROJECT_CHAPTERS, REAL_OFFERS, SECTIONS } from '../system/graph'
-import { previewChapter, useChapterScroll } from '../system/view'
-import { pad2 } from './format'
+import { FIRST_LAB_CHAPTER, OFFER_CHAPTER } from '../system/graph'
+import { select, useExploreScroll, useSelected } from '../system/view'
 import { ArrowRight } from './Icons'
 import { ExternalLink } from './Links'
 import { projectSummary } from './projectSummary'
 
-/** Пока курсор или фокус на строке, камера карты стоит у узла её проекта. */
-const preview = (chapter: number) => ({
-  onPointerEnter: () => previewChapter(chapter),
-  onPointerLeave: () => previewChapter(null),
-  onFocus: () => previewChapter(chapter),
-  onBlur: () => previewChapter(null),
-})
+const CONTACT = 6
 
-function SectionHead({ id, title, lead }: { id: string; title: string; lead: string }) {
+/** Карточка выбранного проекта: одна фраза и переход к подробностям. */
+function Card({ chapter }: { chapter: number }) {
+  const { t } = useLang()
+  const summary = projectSummary(t, chapter)
   return (
-    <header className="section__head">
-      <h2 id={`${id}-title`}>{title}</h2>
-      <p className="lead">{lead}</p>
-    </header>
+    <aside className="card" aria-live="polite" data-card={chapterIds[chapter]}>
+      <button type="button" className="card__close mono" data-log="off" onClick={() => select(null)}>
+        {t.ui.close}
+      </button>
+      {summary.kicker && <p className="kicker mono">{summary.kicker}</p>}
+      <h3>{summary.title}</h3>
+      <p>{summary.lead}</p>
+      <div className="actions">
+        {chapter === CONTACT ? (
+          <>
+            <ExternalLink href={telegramUrl} variant="solid">
+              {t.ui.telegram}
+            </ExternalLink>
+            <ExternalLink href={githubUrl}>{t.ui.github}</ExternalLink>
+          </>
+        ) : (
+          <a className="btn btn--solid" href={`#/${chapterIds[chapter]}`} data-log="off">
+            <span>{t.ui.more}</span>
+            <ArrowRight />
+          </a>
+        )}
+      </div>
+    </aside>
   )
 }
 
-function Section({ id, title, lead, children }: { id: string; title: string; lead: string; children: ReactNode }) {
-  return (
-    <section id={id} className="section" data-chapter="" aria-labelledby={`${id}-title`}>
-      <SectionHead id={id} title={title} lead={lead} />
-      {children}
-    </section>
-  )
-}
-
-/** Главная: первый экран, услуги, проекты, демо-прототипы и контакты. */
+/** Главная: короткое вступление, под ним карта и список того, что можно заказать. */
 export function Home() {
   const { t } = useLang()
-  useChapterScroll()
+  const selected = useSelected()
+  useExploreScroll('#offer')
 
-  // переход из шапки с другой страницы: раздел появляется после смены адреса, докручиваем к нему
+  // выбранный проект показывается вместе с картой: блок с картой подъезжает в экран
   useEffect(() => {
-    const id = location.hash.slice(1)
-    // ждём кадр: страница проекта уже снята, главная разложена по высоте
-    const frame = requestAnimationFrame(() => {
-      if ((SECTIONS as readonly string[]).includes(id)) document.getElementById(id)?.scrollIntoView({ behavior: 'instant' })
-    })
-    return () => {
-      cancelAnimationFrame(frame)
-      previewChapter(null)
+    if (selected === null) return
+    const section = document.getElementById('offer')
+    if (section && Math.abs(section.getBoundingClientRect().top) > window.innerHeight * 0.3) section.scrollIntoView()
+  }, [selected])
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') select(null)
     }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
   }, [])
 
   return (
     <>
-      <section id="intro" className="hero" data-chapter="" aria-labelledby="intro-title">
-        <div className="hero__body">
+      <section id="intro" className="chapter chapter--hero" aria-labelledby="intro-title">
+        <div className="chapter__window" aria-hidden="true" />
+        <div className="chapter__body">
           <p className="eyebrow mono">
             <b>{profile.studio}</b>
             <span>{t.hero.role}</span>
           </p>
           <h1 id="intro-title">{t.hero.title}</h1>
-          <p className="lead">{t.hero.phrase}</p>
-          <div className="actions">
-            <ExternalLink href={telegramUrl} variant="solid">
-              {t.ui.telegram}
-            </ExternalLink>
-            <a className="btn btn--ghost" href="#projects" data-log="off">
-              <span>{t.hero.cta}</span>
-              <ArrowRight />
-            </a>
-          </div>
-        </div>
-        <p className="hero__hint mono">{t.hero.hint}</p>
-        <a className="hero__scroll mono" href="#services" data-log="off">
-          {t.home.scroll}
-        </a>
-      </section>
-
-      <Section id="services" title={t.home.servicesTitle} lead={t.home.servicesLead}>
-        <ol className="rows rows--services">
-          {t.offer.items.slice(0, REAL_OFFERS).map((item, i) => {
-            const chapter = OFFER_CHAPTER[i]
-            return (
-              <li key={item.name}>
-                <a className="row" href={`#/${chapterIds[chapter]}`} data-log="off" data-offer={chapterIds[chapter]} {...preview(chapter)}>
-                  <span className="row__num mono">{pad2(i + 1)}</span>
-                  <span className="row__main">
-                    <b>{item.name}</b>
-                    <span>{item.text}</span>
-                  </span>
-                  <span className="row__go mono">
-                    {t.chapters[chapter]}
-                    <ArrowRight />
-                  </span>
-                </a>
-              </li>
-            )
-          })}
-        </ol>
-      </Section>
-
-      <section id="projects" className="section section--projects" aria-labelledby="projects-title">
-        <SectionHead id="projects" title={t.home.projectsTitle} lead={t.home.projectsLead} />
-        {PROJECT_CHAPTERS.map((chapter, i) => {
-          const summary = projectSummary(t, chapter)
-          return (
-            <article key={chapter} className="project" data-chapter={chapter} data-project={chapterIds[chapter]} aria-labelledby={`project-${chapter}`}>
-              <p className="project__num mono">
-                {pad2(i + 1)}
-                <span>{t.chapters[chapter]}</span>
-              </p>
-              {summary.kicker && <p className="kicker mono">{summary.kicker}</p>}
-              <h3 id={`project-${chapter}`}>{summary.title}</h3>
-              <p className="lead">{summary.lead}</p>
-              <a className="btn btn--solid" href={`#/${chapterIds[chapter]}`} data-log="off">
-                <span>{t.home.openCase}</span>
+          <div className="hero__aside">
+            <p className="lead">{t.hero.phrase}</p>
+            <div className="actions">
+              <ExternalLink href={telegramUrl} variant="solid">
+                {t.ui.telegram}
+              </ExternalLink>
+              <a className="btn btn--ghost" href="#offer" data-log="off">
+                <span>{t.hero.cta}</span>
                 <ArrowRight />
               </a>
-            </article>
-          )
-        })}
+            </div>
+            <p className="hint mono">{t.hero.hint}</p>
+          </div>
+        </div>
       </section>
 
-      <Section id="demos" title={t.home.demosTitle} lead={t.home.demosLead}>
-        <ol className="rows rows--demos">
-          {LAB_CHAPTERS.map((chapter, i) => {
-            const summary = projectSummary(t, chapter)
-            return (
-              <li key={chapter}>
-                <a className="row" href={`#/${chapterIds[chapter]}`} data-log="off" {...preview(chapter)}>
-                  <span className="row__num mono">{pad2(i + 1)}</span>
-                  <span className="row__main">
-                    <b>
-                      {summary.title}
-                      <i className="tag mono">{t.lab.demoTag}</i>
-                    </b>
-                    <span>{summary.lead}</span>
-                  </span>
-                  <span className="row__go mono">
-                    {t.home.openDemo}
-                    <ArrowRight />
-                  </span>
-                </a>
+      <section id="offer" className="chapter chapter--offer" aria-labelledby="offer-title">
+        <div className="chapter__window" aria-hidden="true" />
+        <div className="chapter__body">
+          {selected !== null && <Card chapter={selected} />}
+          <header className="offer__head">
+            <h2 id="offer-title">{t.offer.title}</h2>
+            <p className="note">{t.offer.hint}</p>
+          </header>
+          <ul className="offer">
+            {t.offer.items.map((item, i) => (
+              <li key={item.name}>
+                <button
+                  type="button"
+                  aria-pressed={selected === OFFER_CHAPTER[i]}
+                  data-log="off"
+                  data-offer={chapterIds[OFFER_CHAPTER[i]]}
+                  onClick={() => select(OFFER_CHAPTER[i])}
+                >
+                  <b>
+                    {item.name}
+                    {OFFER_CHAPTER[i] >= FIRST_LAB_CHAPTER && <i className="mono">{t.lab.demoTag}</i>}
+                  </b>
+                  <span>{item.text}</span>
+                </button>
               </li>
-            )
-          })}
-        </ol>
-      </Section>
-
-      <section id="contact" className="section section--contact" data-chapter={CONTACT_CHAPTER} aria-labelledby="contact-title">
-        <h2 id="contact-title">{t.contact.title}</h2>
-        <p className="lead">{t.contact.lead}</p>
-        <a className="handle" href={telegramUrl} target="_blank" rel="noreferrer">
-          @{profile.telegram}
-        </a>
-        <div className="actions">
-          <ExternalLink href={telegramUrl} variant="solid">
-            {t.ui.telegram}
-          </ExternalLink>
-          <ExternalLink href={githubUrl}>{t.ui.github}</ExternalLink>
-        </div>
-        <dl className="stackline">
-          {t.skills.groups.map((group) => (
-            <div key={group.name}>
-              <dt className="mono">{group.name}</dt>
-              <dd>{group.items.join(' · ')}</dd>
+            ))}
+          </ul>
+          <footer className="foot">
+            <a className="handle" href={telegramUrl} target="_blank" rel="noreferrer">
+              @{profile.telegram}
+            </a>
+            <div className="actions">
+              <ExternalLink href={telegramUrl} variant="solid">
+                {t.ui.telegram}
+              </ExternalLink>
+              <ExternalLink href={githubUrl}>{t.ui.github}</ExternalLink>
             </div>
-          ))}
-        </dl>
-        <p className="note mono">{t.contact.footer}</p>
+            <p className="note">
+              <span className="mono">{t.contact.stackLabel}</span> {t.skills.groups.flatMap((group) => group.items).join(' · ')}
+            </p>
+          </footer>
+        </div>
       </section>
     </>
   )
