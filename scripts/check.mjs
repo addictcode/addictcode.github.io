@@ -1,5 +1,5 @@
 // Сквозная проверка собранного сайта в Chromium:
-// главная (первый экран, фигура, услуги, проекты, демо, контакты, навигация), страницы проектов,
+// главная (первый экран, карта и её узлы, услуги, проекты, демо, контакты, навигация), страницы проектов,
 // горизонтальный скролл, оба демо, шесть прототипов, переключатель языка, режимы без WebGL и с prefers-reduced-motion.
 // Запуск: npm run build && npm run check. Скриншоты ложатся в test-results/.
 import { mkdir } from 'node:fs/promises'
@@ -32,15 +32,15 @@ async function open(options = {}, path = '') {
 
 const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
 const scrollTo = (page, selector) => page.evaluate((s) => document.querySelector(s).scrollIntoView({ behavior: 'instant' }), selector)
-/** во что сейчас собрана фигура: состояние сцены видно по разделу посередине экрана */
-const shapeAt = (page) =>
+/** у какого проекта стоит камера: блок посередине экрана и подсказка у его узла */
+const chapterAt = (page) =>
   page.evaluate(() => {
     const middle = window.innerHeight / 2
-    const hit = [...document.querySelectorAll('[data-shape]')].find((el) => {
+    const hit = [...document.querySelectorAll('[data-chapter]')].find((el) => {
       const box = el.getBoundingClientRect()
       return box.top <= middle && box.bottom > middle
     })
-    return hit?.dataset.shape ?? null
+    return hit?.dataset.chapter ?? null
   })
 
 /* 1. Главная и страницы проектов */
@@ -51,7 +51,7 @@ for (const [name, viewport] of [
   console.log(`\n${name}`)
   const { context, page, errors } = await open({ viewport, deviceScaleFactor: 1, hasTouch: name.startsWith('mobile') })
   await page.waitForSelector('html[data-canvas]', { timeout: 30000 }).catch(() => {})
-  ok((await page.locator('html[data-canvas]').count()) === 1, '3D-фигура отрисовалась')
+  ok((await page.locator('html[data-canvas]').count()) === 1, '3D-карта отрисовалась')
   await page.waitForTimeout(1500)
   await page.screenshot({ path: `${OUT}/${name}-home-intro.png` })
   ok((await page.locator('main h1').count()) === 1, 'на главной один заголовок первого уровня')
@@ -60,14 +60,26 @@ for (const [name, viewport] of [
   ok((await page.locator('#demos .row .tag').count()) === 6, 'шесть демо помечены как демо')
   ok((await page.locator('#contact .handle').count()) === 1, 'в контактах есть Telegram')
 
-  for (const [selector, shape] of [['#services', 'services'], ['[data-project="crm"]', 'crm'], ['#contact', 'plane']]) {
+  for (const [selector, chapter] of [['#services', ''], ['[data-project="crm"]', '3'], ['#contact', '6']]) {
     await scrollTo(page, selector)
     await page.waitForTimeout(400)
-    ok((await shapeAt(page)) === shape, `раздел ${selector}: фигура собирается в «${shape}»`)
+    ok((await chapterAt(page)) === chapter, `раздел ${selector}: камера ${chapter ? `у проекта ${chapter}` : 'показывает всю карту'}`)
   }
   await scrollTo(page, '[data-project="crm"]')
   await page.waitForTimeout(1500)
+  if (name.startsWith('desktop')) ok((await page.locator('.hotspot[data-node="crm"][data-active]').count()) === 1, 'у узла проекта, о котором читают, видна подсказка')
   await page.screenshot({ path: `${OUT}/${name}-home-project.png` })
+
+  if (name.startsWith('desktop')) {
+    // узел карты нажимается и ведёт на страницу проекта
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await page.waitForTimeout(1500)
+    await page.locator('.hotspot[data-node="site"]').click({ force: true })
+    await page.waitForSelector('article#site')
+    ok(new URL(page.url()).hash === '#/site', 'клик по узлу карты открывает проект')
+    await page.goto(site.url)
+    await page.waitForSelector('#services')
+  }
 
   // строка услуги и кнопка проекта ведут на страницу проекта
   await page.locator('#services .row[data-offer="bot"]').first().click()
@@ -264,10 +276,10 @@ for (const [name, options, init] of [
   const posterShown = await page
     .waitForFunction(() => {
       const img = document.querySelector('.stage__poster img')
-      return img?.complete && img.naturalWidth > 0 && img.currentSrc.includes('core')
+      return img?.complete && img.naturalWidth > 0 && img.currentSrc.includes('map')
     }, null, { timeout: 5000 })
     .then(() => true, () => false)
-  ok(posterShown, 'на первом экране показан кадр фигуры')
+  ok(posterShown, 'на первом экране показан кадр карты')
   ok((await page.locator('#services .row').count()) === 9 && (await page.locator('#projects .project').count()) === 5, 'главная читается целиком')
   await page.screenshot({ path: `${OUT}/${name}-home.png`, fullPage: true })
   await page.goto(`${site.url}#/site`)

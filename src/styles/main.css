@@ -129,7 +129,7 @@ select {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  /* под прозрачным холстом: мягкий свет справа, где стоит фигура, и тёмные углы */
+  /* под прозрачным холстом: мягкий свет справа, где стоит карта, и тёмные углы */
   background:
     radial-gradient(60% 70% at 72% 48%, rgb(28 33 41 / 0.8) 0, rgb(10 12 15 / 0) 70%),
     radial-gradient(140% 120% at 50% 50%, rgb(10 12 15 / 0) 55%, rgb(5 6 8 / 0.9) 100%),
@@ -164,14 +164,107 @@ select {
   background: var(--bg);
 }
 
-/* узкий экран: фигура только на первом экране, ниже текст на сплошном фоне */
+/* ───────── Кнопки на узлах карты ───────── */
+.hotspots {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+}
+
+/* точка привязки — основание узла; кнопка накрывает сам узел над ней */
+.hotspot {
+  position: absolute;
+  top: -84px;
+  left: -46px;
+  width: 92px;
+  height: 100px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  pointer-events: auto;
+  visibility: hidden;
+}
+
+.hotspot:focus-visible {
+  outline-offset: -6px;
+}
+
+/* подсказка справа от узла: что за проект, какие услуги, что будет по нажатию */
+.tip {
+  position: absolute;
+  top: 6px;
+  left: calc(100% + 4px);
+  display: grid;
+  gap: 3px;
+  min-width: 190px;
+  padding: 10px 12px 11px;
+  background: rgb(15 18 22 / 0.96);
+  border: 1px solid var(--line-strong);
+  border-left: 2px solid var(--accent);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  line-height: 1.35;
+  text-align: left;
+  white-space: nowrap;
+  opacity: 0;
+  translate: -6px 0;
+  transition: opacity 0.18s, translate 0.18s;
+  pointer-events: none;
+}
+
+.hotspot:hover .tip,
+.hotspot:focus-visible .tip,
+.hotspot[data-active] .tip {
+  opacity: 1;
+  translate: 0 0;
+}
+
+.hotspot:hover .tip,
+.hotspot:focus-visible .tip {
+  z-index: 1;
+  border-color: var(--accent);
+}
+
+.tip__head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+}
+
+.tip__head b {
+  font-weight: 400;
+}
+
+.tip__title {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.tip__line {
+  color: var(--muted);
+}
+
+.tip__go {
+  margin-top: 4px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* узкий экран: карта только на первом экране, ниже текст на сплошном фоне */
 @media (max-width: 899px) {
-  .stage:not(.stage--poster) .stage__canvas {
+  .stage:not(.stage--poster) .stage__canvas,
+  .hotspots {
     opacity: var(--hero, 0);
   }
 
-  html[data-view='project'] .stage__canvas {
-    opacity: 0;
+  html[data-view='project'] .stage__canvas,
+  html[data-view='project'] .hotspots {
+    display: none;
   }
 }
 
@@ -241,6 +334,16 @@ select {
 main {
   position: relative;
   z-index: 1;
+  /* сквозь пустые места страницы нажимаются узлы карты */
+  pointer-events: none;
+}
+
+.hero__body,
+.hero__hint,
+.hero__scroll,
+.section > *,
+.page > * {
+  pointer-events: auto;
 }
 
 main:focus {
@@ -305,7 +408,7 @@ h3 {
   max-width: 44em;
 }
 
-/* первый экран: текст слева, фигура справа (на телефоне — над текстом) */
+/* первый экран: текст слева, карта справа (на телефоне — над текстом) */
 .hero {
   position: relative;
   display: flex;
@@ -313,6 +416,19 @@ h3 {
   justify-content: flex-end;
   min-height: 100svh;
   padding: calc(var(--topbar) + 38svh) var(--gutter) 48px;
+}
+
+/* под текстом первого экрана карта уходит в фон */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 30svh 0 0;
+  background: linear-gradient(180deg, rgb(10 12 15 / 0) 0, var(--bg) 16svh);
+  pointer-events: none;
+}
+
+.hero__body {
+  position: relative;
 }
 
 .hero__body > * + * {
@@ -331,7 +447,7 @@ h3 {
   display: none;
 }
 
-/* разделы главной на сплошном фоне на телефоне, поверх фигуры — на широком экране */
+/* разделы главной на сплошном фоне на телефоне, поверх карты — на широком экране */
 .section {
   padding: 72px var(--gutter);
   background: var(--bg);
@@ -1459,11 +1575,11 @@ label > .mono {
   }
 }
 
-/* ───────── Широкий экран: текст слева, фигура справа ───────── */
+/* ───────── Широкий экран: текст слева, карта справа ───────── */
 @media (min-width: 900px) {
   :root {
     --gutter: max(40px, 5vw);
-    /* колонка текста: правая часть экрана остаётся фигуре */
+    /* колонка текста: правая часть экрана остаётся карте */
     --column: min(640px, 50vw);
   }
 
@@ -1486,6 +1602,10 @@ label > .mono {
 
   .topbar__nav a:hover {
     color: var(--ink);
+  }
+
+  .hero::before {
+    display: none;
   }
 
   .hero {
@@ -1539,20 +1659,15 @@ label > .mono {
     max-width: var(--column);
   }
 
-  /* текст поверх тёмной полосы: фигура за ним не мешает читать */
+  /* текст поверх тёмной полосы: карта за ним не мешает читать */
   main::before {
     content: '';
     position: fixed;
     inset: 0 auto 0 0;
     z-index: -1;
     width: calc(var(--column) + var(--gutter) * 2.2);
-    background: linear-gradient(90deg, rgb(10 12 15 / 0.92) 0, rgb(10 12 15 / 0.85) 70%, rgb(10 12 15 / 0));
-    opacity: calc(1 - var(--hero, 0));
+    background: linear-gradient(90deg, rgb(10 12 15 / 0.97) 0, rgb(10 12 15 / 0.93) 72%, rgb(10 12 15 / 0));
     pointer-events: none;
-  }
-
-  html[data-view='project'] main::before {
-    opacity: 1;
   }
 
   .row {

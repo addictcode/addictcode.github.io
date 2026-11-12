@@ -7,7 +7,7 @@ import { ExternalLink } from './Links'
 import { ProjectContent } from './ProjectContent'
 import { projectSummary } from './projectSummary'
 
-/** Страница проекта: полный разбор колонкой слева, фигура в форме проекта справа. */
+/** Страница проекта: полный разбор колонкой слева, карта с узлом проекта справа. */
 export function ProjectPage({ chapter }: { chapter: number }) {
   const { t } = useLang()
   const id = chapterIds[chapter]
