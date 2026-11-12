@@ -2,19 +2,19 @@ import { useEffect, type ReactNode } from 'react'
 import { chapterIds } from '../content'
 import { githubUrl, profile, telegramUrl } from '../content/profile'
 import { useLang } from '../i18n/LangContext'
-import { CHAPTER_SHAPE, LAB_CHAPTERS, OFFER_CHAPTER, PROJECT_CHAPTERS, REAL_OFFERS, SECTIONS, type ShapeId } from '../system/graph'
-import { previewShape, useShapeScroll } from '../system/view'
+import { CONTACT_CHAPTER, LAB_CHAPTERS, OFFER_CHAPTER, PROJECT_CHAPTERS, REAL_OFFERS, SECTIONS } from '../system/graph'
+import { previewChapter, useChapterScroll } from '../system/view'
 import { pad2 } from './format'
 import { ArrowRight } from './Icons'
 import { ExternalLink } from './Links'
 import { projectSummary } from './projectSummary'
 
-/** Пока курсор или фокус на строке, фигура показывает форму её проекта. */
-const preview = (shape: ShapeId) => ({
-  onPointerEnter: () => previewShape(shape),
-  onPointerLeave: () => previewShape(null),
-  onFocus: () => previewShape(shape),
-  onBlur: () => previewShape(null),
+/** Пока курсор или фокус на строке, камера карты стоит у узла её проекта. */
+const preview = (chapter: number) => ({
+  onPointerEnter: () => previewChapter(chapter),
+  onPointerLeave: () => previewChapter(null),
+  onFocus: () => previewChapter(chapter),
+  onBlur: () => previewChapter(null),
 })
 
 function SectionHead({ id, title, lead }: { id: string; title: string; lead: string }) {
@@ -26,9 +26,9 @@ function SectionHead({ id, title, lead }: { id: string; title: string; lead: str
   )
 }
 
-function Section({ id, shape, title, lead, children }: { id: string; shape: ShapeId; title: string; lead: string; children: ReactNode }) {
+function Section({ id, title, lead, children }: { id: string; title: string; lead: string; children: ReactNode }) {
   return (
-    <section id={id} className="section" data-shape={shape} aria-labelledby={`${id}-title`}>
+    <section id={id} className="section" data-chapter="" aria-labelledby={`${id}-title`}>
       <SectionHead id={id} title={title} lead={lead} />
       {children}
     </section>
@@ -38,7 +38,7 @@ function Section({ id, shape, title, lead, children }: { id: string; shape: Shap
 /** Главная: первый экран, услуги, проекты, демо-прототипы и контакты. */
 export function Home() {
   const { t } = useLang()
-  useShapeScroll()
+  useChapterScroll()
 
   // переход из шапки с другой страницы: раздел появляется после смены адреса, докручиваем к нему
   useEffect(() => {
@@ -49,13 +49,13 @@ export function Home() {
     })
     return () => {
       cancelAnimationFrame(frame)
-      previewShape(null)
+      previewChapter(null)
     }
   }, [])
 
   return (
     <>
-      <section id="intro" className="hero" data-shape="core" aria-labelledby="intro-title">
+      <section id="intro" className="hero" data-chapter="" aria-labelledby="intro-title">
         <div className="hero__body">
           <p className="eyebrow mono">
             <b>{profile.studio}</b>
@@ -79,13 +79,13 @@ export function Home() {
         </a>
       </section>
 
-      <Section id="services" shape="services" title={t.home.servicesTitle} lead={t.home.servicesLead}>
+      <Section id="services" title={t.home.servicesTitle} lead={t.home.servicesLead}>
         <ol className="rows rows--services">
           {t.offer.items.slice(0, REAL_OFFERS).map((item, i) => {
             const chapter = OFFER_CHAPTER[i]
             return (
               <li key={item.name}>
-                <a className="row" href={`#/${chapterIds[chapter]}`} data-log="off" data-offer={chapterIds[chapter]} {...preview(CHAPTER_SHAPE[chapter])}>
+                <a className="row" href={`#/${chapterIds[chapter]}`} data-log="off" data-offer={chapterIds[chapter]} {...preview(chapter)}>
                   <span className="row__num mono">{pad2(i + 1)}</span>
                   <span className="row__main">
                     <b>{item.name}</b>
@@ -107,7 +107,7 @@ export function Home() {
         {PROJECT_CHAPTERS.map((chapter, i) => {
           const summary = projectSummary(t, chapter)
           return (
-            <article key={chapter} className="project" data-shape={CHAPTER_SHAPE[chapter]} data-project={chapterIds[chapter]} aria-labelledby={`project-${chapter}`}>
+            <article key={chapter} className="project" data-chapter={chapter} data-project={chapterIds[chapter]} aria-labelledby={`project-${chapter}`}>
               <p className="project__num mono">
                 {pad2(i + 1)}
                 <span>{t.chapters[chapter]}</span>
@@ -124,13 +124,13 @@ export function Home() {
         })}
       </section>
 
-      <Section id="demos" shape="calendar" title={t.home.demosTitle} lead={t.home.demosLead}>
+      <Section id="demos" title={t.home.demosTitle} lead={t.home.demosLead}>
         <ol className="rows rows--demos">
           {LAB_CHAPTERS.map((chapter, i) => {
             const summary = projectSummary(t, chapter)
             return (
               <li key={chapter}>
-                <a className="row" href={`#/${chapterIds[chapter]}`} data-log="off" {...preview(CHAPTER_SHAPE[chapter])}>
+                <a className="row" href={`#/${chapterIds[chapter]}`} data-log="off" {...preview(chapter)}>
                   <span className="row__num mono">{pad2(i + 1)}</span>
                   <span className="row__main">
                     <b>
@@ -150,7 +150,7 @@ export function Home() {
         </ol>
       </Section>
 
-      <section id="contact" className="section section--contact" data-shape="plane" aria-labelledby="contact-title">
+      <section id="contact" className="section section--contact" data-chapter={CONTACT_CHAPTER} aria-labelledby="contact-title">
         <h2 id="contact-title">{t.contact.title}</h2>
         <p className="lead">{t.contact.lead}</p>
         <a className="handle" href={telegramUrl} target="_blank" rel="noreferrer">

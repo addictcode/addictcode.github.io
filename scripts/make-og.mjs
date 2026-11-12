@@ -1,5 +1,5 @@
 // Собирает OG-картинку 1200×630 и PNG-иконки в стиле сайта.
-// Снимается первый экран статичной версии: тексты из src/content, фигура из public/posters.
+// Снимается первый экран статичной версии: тексты из src/content, карта из public/posters.
 // Нужна свежая сборка: npm run build && npm run og
 import { readFile } from 'node:fs/promises'
 import sharp from 'sharp'
@@ -10,7 +10,7 @@ const browser = await launchBrowser()
 const page = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 })
 await page.goto(`${site.url}?static`, { waitUntil: 'networkidle' })
 
-// OG — это первый экран как есть: заголовок и фигура
+// OG — это первый экран как есть: заголовок и карта
 await page.addStyleTag({ content: '.topbar, .hero__hint, .hero__scroll, .skip { display: none !important }' })
 await page.waitForFunction(() => document.querySelector('.stage__poster img').complete)
 await page.evaluate(() => document.fonts.ready)

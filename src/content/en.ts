@@ -17,7 +17,7 @@ export const en: Content = {
     liveDemo: 'Live demo',
     demo: 'Demo',
     externalHint: 'opens in a new tab',
-    stageAlt: 'A 3D figure made of cubes: a sphere with an orange core inside',
+    stageAlt: 'A 3D system map: project nodes laid out in lanes and connected by buses',
     more: 'Details',
     close: 'Close',
     back: 'All projects',
@@ -30,7 +30,7 @@ export const en: Content = {
     title: 'Websites, bots and CRM where a request reaches the result on its own.',
     phrase: 'We build systems to fit the task: a website with lead forms, a Telegram bot, a scraper, a CRM and whatever connects them.',
     cta: 'See projects',
-    hint: 'The figure rebuilds itself for every section. Move your cursor over it.',
+    hint: 'The map nodes are our projects. Hover to see what each one is, click to open it.',
   },
   site: {
     kicker: 'Commercial project · in production · client not named',
@@ -218,7 +218,7 @@ export const en: Content = {
     title: 'Let’s build one for your task',
     lead: 'Tell us on Telegram what needs to be done. We will reply with a timeline and a price.',
     stackLabel: 'Stack',
-    footer: 'The figure is built in code with three.js.',
+    footer: 'The map is built in code with three.js.',
   },
   offer: {
     title: 'What we can build',

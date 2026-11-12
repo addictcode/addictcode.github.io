@@ -1,11 +1,12 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { chapterIds } from '../content'
-import { CHAPTER_SHAPE, CONTACT_CHAPTER, type ShapeId } from './graph'
+import { CONTACT_CHAPTER } from './graph'
 
 /**
- * Что сейчас на экране.
- * route — открыта страница проекта; shape — во что собрана скульптура;
- * hero — какая доля первого экрана ещё видна (1 … 0), от неё зависит, где стоит скульптура.
+ * Что сейчас показывает карта.
+ * route — открыта страница проекта; focus — проект, о котором посетитель читает на главной;
+ * preview — проект под курсором (строка списка или узел карты);
+ * hero — какая доля первого экрана ещё видна (1 … 0).
  * Сцена читает состояние в кадре без React, интерфейс подписывается на изменения.
  */
 function readRoute(): number | null {
@@ -13,7 +14,7 @@ function readRoute(): number | null {
   return location.hash.startsWith('#/') && index > 0 && index !== CONTACT_CHAPTER ? index : null
 }
 
-const state = { route: readRoute(), shape: 'core' as ShapeId, preview: null as ShapeId | null, hero: 1 }
+const state = { route: readRoute(), focus: null as number | null, preview: null as number | null, hero: 1 }
 const listeners = new Set<() => void>()
 const notify = () => listeners.forEach((fn) => fn())
 
@@ -22,19 +23,22 @@ function subscribe(fn: () => void): () => void {
   return () => listeners.delete(fn)
 }
 
-export const getShape = (): ShapeId => state.preview ?? state.shape
+/** Глава, на которой стоит камера; null — общий вид карты. */
+export const getChapter = (): number | null => state.preview ?? state.route ?? state.focus
 export const getHero = (): number => state.hero
 export const isProjectPage = (): boolean => state.route !== null
 export const onViewChange = subscribe
 
-/** Посетитель навёл на строку услуги или проекта: фигура показывает его форму, пока курсор на строке. */
-export function previewShape(shape: ShapeId | null): void {
-  state.preview = shape
+/** Курсор или фокус на строке проекта или на узле: камера подлетает к нему, пока он там. */
+export function previewChapter(chapter: number | null): void {
+  if (chapter === state.preview) return
+  state.preview = chapter
+  notify()
 }
 
-function setShape(shape: ShapeId): void {
-  if (shape === state.shape) return
-  state.shape = shape
+function setFocus(chapter: number | null): void {
+  if (chapter === state.focus) return
+  state.focus = chapter
   notify()
 }
 
@@ -43,31 +47,29 @@ window.addEventListener('hashchange', () => {
   if (next === state.route) return
   state.route = next
   state.preview = null
-  if (next !== null) setShape(CHAPTER_SHAPE[next])
   notify()
 })
-if (state.route !== null) state.shape = CHAPTER_SHAPE[state.route]
 
 export const useRoute = (): number | null => useSyncExternalStore(subscribe, () => state.route)
-export const useShape = (): ShapeId => useSyncExternalStore(subscribe, () => state.shape)
+export const useChapter = (): number | null => useSyncExternalStore(subscribe, getChapter)
 
 /**
- * Главная: скульптура собирается в форму раздела, который сейчас посередине экрана.
- * Раздел помечается атрибутом `data-shape`.
+ * Главная: камера идёт к проекту, о котором посетитель сейчас читает.
+ * Блок помечается атрибутом `data-chapter`; блок без номера (`data-chapter=""`) — общий вид карты.
  */
-export function useShapeScroll(): void {
+export function useChapterScroll(): void {
   useEffect(() => {
     const hero = document.getElementById('intro')
     let frame = 0
     const update = () => {
       frame = 0
       const middle = window.innerHeight * 0.5
-      let found: ShapeId = 'core'
-      document.querySelectorAll<HTMLElement>('[data-shape]').forEach((element) => {
+      let found: number | null = null
+      document.querySelectorAll<HTMLElement>('[data-chapter]').forEach((element) => {
         const box = element.getBoundingClientRect()
-        if (box.top <= middle && box.bottom > middle) found = element.dataset.shape as ShapeId
+        if (box.top <= middle && box.bottom > middle) found = element.dataset.chapter ? Number(element.dataset.chapter) : null
       })
-      setShape(found)
+      setFocus(found)
       if (hero) {
         const box = hero.getBoundingClientRect()
         state.hero = Math.min(1, Math.max(0, box.bottom / box.height))
@@ -84,6 +86,7 @@ export function useShapeScroll(): void {
       cancelAnimationFrame(frame)
       window.removeEventListener('scroll', schedule)
       window.removeEventListener('resize', schedule)
+      state.focus = null
       state.hero = 0
       document.documentElement.style.removeProperty('--hero')
     }

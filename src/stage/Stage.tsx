@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { useLang } from '../i18n/LangContext'
 import { hasWebGL, pickStageMode } from '../system/capability'
 import { useRoute } from '../system/view'
+import { Hotspots } from './Hotspots'
 
 const SystemCanvas = lazy(() => import('../scene/SystemCanvas'))
 
@@ -35,21 +36,21 @@ function whenNeeded(run: () => void): () => void {
   return stop
 }
 
-/** Кадр фигуры: широкий и вертикальный. Он же — статичная версия без WebGL. */
+/** Кадр карты: широкий и вертикальный. Он же — статичная версия без WebGL. */
 function Poster() {
   const { t } = useLang()
   return (
     <picture className="stage__poster">
-      <source media="(max-width: 899px)" srcSet="/posters/core-m.avif" type="image/avif" />
-      <source media="(max-width: 899px)" srcSet="/posters/core-m.webp" type="image/webp" />
-      <source srcSet="/posters/core.avif" type="image/avif" />
-      <img src="/posters/core.webp" alt={t.ui.stageAlt} width={1600} height={1000} decoding="async" fetchPriority="high" />
+      <source media="(max-width: 899px)" srcSet="/posters/map-m.avif" type="image/avif" />
+      <source media="(max-width: 899px)" srcSet="/posters/map-m.webp" type="image/webp" />
+      <source srcSet="/posters/map.avif" type="image/avif" />
+      <img src="/posters/map.webp" alt={t.ui.stageAlt} width={1600} height={1000} decoding="async" fetchPriority="high" />
     </picture>
   )
 }
 
 /**
- * Слой фигуры под текстом. Живая версия рисует её в canvas,
+ * Слой карты под текстом. Живая версия рисует её в canvas,
  * статичная показывает кадр на первом экране главной.
  */
 export function Stage() {
@@ -73,6 +74,7 @@ export function Stage() {
   return (
     <div className="stage" data-mode={mode} data-ready={ready || undefined}>
       {!ready && home && <Poster />}
+      {ready && <Hotspots />}
       {load && (
         <Suspense fallback={null}>
           <SystemCanvas onReady={() => setReady(true)} />
