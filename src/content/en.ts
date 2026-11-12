@@ -3,9 +3,9 @@ import type { Content } from './types'
 
 export const en: Content = {
   meta: {
-    title: 'Dmitry Shaibakov — websites, Telegram bots and CRM built to fit',
+    title: 'addictcode — websites, Telegram bots and CRM built to fit',
     description:
-      'Backend developer. Websites with admin panels and lead forms, Telegram bots, scrapers and monitoring, CRM and internal systems, LLM integrations.',
+      'Development studio. Websites with admin panels and lead forms, Telegram bots, scrapers and monitoring, CRM and internal systems, LLM integrations.',
   },
   ui: {
     skip: 'Skip to content',
@@ -26,12 +26,11 @@ export const en: Content = {
   },
   chapters: ['Start', 'Website', 'Bot', 'CRM', 'Real time', 'Scraping & LLM', 'Contact', 'Booking', 'Shop', 'Assistant', 'Leads to CRM', 'Prices', 'Account'],
   hero: {
-    name: 'Dmitry Shaibakov',
-    role: 'backend developer',
+    role: 'development studio',
     title: 'Websites, bots and CRM where a request reaches the result on its own.',
-    phrase: 'I build systems to fit the task: a website with lead forms, a Telegram bot, a scraper, a CRM and whatever connects them.',
-    cta: 'What I can build',
-    hint: 'The map nodes are my projects. Click any of them.',
+    phrase: 'We build systems to fit the task: a website with lead forms, a Telegram bot, a scraper, a CRM and whatever connects them.',
+    cta: 'What we can build',
+    hint: 'The map nodes are our projects. Click any of them.',
   },
   site: {
     kicker: 'Commercial project · in production · client not named',
@@ -56,7 +55,7 @@ export const en: Content = {
     },
   },
   bot: {
-    kicker: 'Open source · built for my own reselling',
+    kicker: 'Open source · built for in-house reselling',
     title: 'Vinted Telegram Bot',
     lead: 'Watches saved Vinted searches and sends new listings within seconds.',
     facts: [
@@ -166,7 +165,7 @@ export const en: Content = {
     form: {
       legend: 'Request',
       name: 'Name',
-      namePlaceholder: 'What should I call you',
+      namePlaceholder: 'What should we call you',
       need: 'What you need',
       needs: ['Website with lead forms', 'Telegram bot', 'CRM or internal system', 'Scraper or monitoring'],
       budget: 'Budget',
@@ -204,7 +203,7 @@ export const en: Content = {
     done: 'The request went all the way. In a real project a bot, a database and charts would be working here.',
   },
   skills: {
-    title: 'What I build with',
+    title: 'What we build with',
     lead: 'Tools from the projects above.',
     groups: [
       { name: 'Backend', items: ['Java 17–25', 'Spring Boot 3–4'] },
@@ -217,13 +216,13 @@ export const en: Content = {
   },
   contact: {
     title: 'Let’s build one for your task',
-    lead: 'Tell me on Telegram what needs to be done. I will reply with a timeline and a price.',
+    lead: 'Tell us on Telegram what needs to be done. We will reply with a timeline and a price.',
     stackLabel: 'Stack',
     footer: 'The map is built in code with three.js.',
   },
   offer: {
-    title: 'What I can build',
-    hint: 'Click a service: I will show the project where it already works.',
+    title: 'What we can build',
+    hint: 'Click a service: we will show the project where it already works.',
     items: [
       { name: 'Website or landing page with lead forms', text: 'Requests arrive in Telegram and by email' },
       { name: 'Catalogue with an admin panel', text: 'Filters, search, client account, Excel export' },

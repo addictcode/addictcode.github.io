@@ -68,7 +68,7 @@ export function Home() {
         <div className="chapter__window" aria-hidden="true" />
         <div className="chapter__body">
           <p className="eyebrow mono">
-            <b>{t.hero.name}</b>
+            <b>{profile.studio}</b>
             <span>{t.hero.role}</span>
           </p>
           <h1 id="intro-title">{t.hero.title}</h1>

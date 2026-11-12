@@ -45,7 +45,6 @@ export interface Content {
   /** названия глав: подписи в навигации */
   chapters: string[]
   hero: {
-    name: string
     role: string
     title: string
     phrase: string

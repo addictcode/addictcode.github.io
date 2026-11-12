@@ -72,7 +72,7 @@ export const labEn: typeof labRu = {
   crm: {
     form: 'Request',
     name: 'Name',
-    namePlaceholder: 'What should I call you',
+    namePlaceholder: 'What should we call you',
     source: 'Source',
     sources: ['Website', 'Telegram bot'],
     submit: 'Send request',

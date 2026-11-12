@@ -1,5 +1,6 @@
-/** Контакты владельца. Telegram-ник меняется только здесь. */
+/** Название студии и контакты. Название и Telegram-ник меняются только здесь. */
 export const profile = {
+  studio: 'addictcode',
   telegram: 'heaphog',
   github: 'addictcode',
 } as const

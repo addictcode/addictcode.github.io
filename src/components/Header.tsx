@@ -1,5 +1,5 @@
 import { chapterIds, languages } from '../content'
-import { telegramUrl } from '../content/profile'
+import { profile, telegramUrl } from '../content/profile'
 import { useLang } from '../i18n/LangContext'
 import { emit } from '../system/bus'
 import { FIRST_LAB_CHAPTER } from '../system/graph'
@@ -20,7 +20,7 @@ export function Header() {
   return (
     <header className="topbar">
       <a className="topbar__brand" href="#/" data-log="off">
-        {t.hero.name}
+        {profile.studio}
       </a>
       <nav className="topbar__nav mono" aria-label={t.ui.projects}>
         <ol>
