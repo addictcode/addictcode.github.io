@@ -17,3 +17,10 @@ export function placeHotspot(id: NodeId, x: number, y: number, visible: boolean)
   element.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`
   element.style.visibility = visible ? 'visible' : 'hidden'
 }
+
+/** Узел под курсором или в фокусе клавиатуры: сцена приподнимает и подсвечивает его, пока он там. */
+let hovered: NodeId | null = null
+export const getHovered = (): NodeId | null => hovered
+export function setHovered(id: NodeId | null): void {
+  hovered = id
+}

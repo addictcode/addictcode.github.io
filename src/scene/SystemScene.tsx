@@ -34,6 +34,7 @@ import {
   CHAPTER_FOCUS,
   EDGES,
   edgePoints,
+  EXPLORE_SHOT,
   LANE_Z,
   LANES,
   NODE_IDS,
@@ -46,8 +47,8 @@ import {
   type Point,
   type Shot,
 } from '../system/graph'
-import { placeHotspot } from '../system/hotspots'
-import { getChapter, getHero } from '../system/view'
+import { getHovered, placeHotspot } from '../system/hotspots'
+import { getChapter, getExplore, isProjectPage } from '../system/view'
 import {
   dashedGeometry,
   edgeGeometry,
@@ -61,6 +62,7 @@ import {
   solidGeometry,
   traceGeometry,
 } from './geometry'
+import { horizonGeometry } from './horizon'
 import { nodeShape } from './nodeShapes'
 import { LABEL_FONT, PALETTE } from './palette'
 
@@ -84,10 +86,12 @@ const MAX_PACKETS = 64
 const TRAIL = 4
 const TRAIL_GAP = 0.2
 const WIDE = 1100
-/** широкий экран: текст колонкой слева, карта сдвинута вправо; общий вид шире, его сдвиг больше */
-const SHIFT_X = 0.2
-const SHIFT_X_OVERVIEW = 0.3
-/** узкий экран: карта в окне над текстом первого экрана */
+/** страница проекта на широком экране: текст справа, карта сдвинута влево */
+const SHIFT_PROJECT_X = 0.2
+/** блок услуг на широком экране: слева заголовок и контакты, карта сдвинута вправо */
+const SHIFT_EXPLORE_X = 0.06
+/** первый экран главной: заголовок внизу, карта поднята */
+const SHIFT_HERO_Y = 0.13
 const SHIFT_Y_NARROW = 0.12
 /** сборка карты при загрузке: длительность и задержка между узлами, секунды */
 const INTRO_TIME = 1.1
@@ -130,7 +134,21 @@ const GRID_FRAGMENT = /* glsl */ `
   uniform vec2 uPointer;
   uniform float uPointerOn;
   uniform vec3 uRipple;
+  uniform float uTime;
   varying vec2 vWorld;
+  float hash(float n) {
+    return fract(sin(n * 127.1) * 43758.5453);
+  }
+  // по линиям сетки через 10 бегут короткие штрихи: у каждой линии своя скорость и направление
+  float traffic(float along, float across, float index) {
+    float w = fwidth(across);
+    float onLine = 1.0 - smoothstep(0.0, w * 1.5, abs(across));
+    float active = step(0.45, hash(index));
+    float speed = (2.0 + hash(index + 7.0) * 5.0) * (hash(index + 3.0) > 0.5 ? 1.0 : -1.0);
+    float dash = smoothstep(0.0, 0.25, fract(along / 24.0 - uTime * speed / 24.0 + hash(index + 11.0)));
+    float head = dash * (1.0 - step(0.12, 1.0 - dash));
+    return onLine * active * head;
+  }
   // тонкие линии с шагом step
   float lines(vec2 p, float step) {
     vec2 w = fwidth(p) / step;
@@ -148,15 +166,31 @@ const GRID_FRAGMENT = /* glsl */ `
     float crossX = (1.0 - smoothstep(0.0, w.x * 1.2, ten.x)) * step(ten.y, 0.55);
     float crossZ = (1.0 - smoothstep(0.0, w.y * 1.2, ten.y)) * step(ten.x, 0.55);
     float marks = max(crossX, crossZ);
-    float pattern = dots * 0.75 + lines(vWorld, 5.0) * 0.32 + marks * 1.3;
+    vec2 tenCell = floor(vWorld / 10.0 + 0.5);
+    vec2 tenOff = vWorld - tenCell * 10.0;
+    float flow = max(traffic(vWorld.x, tenOff.y, tenCell.y + 31.0), traffic(vWorld.y, tenOff.x, tenCell.x + 97.0));
+    float pattern = dots * 0.75 + lines(vWorld, 5.0) * 0.32 + marks * 1.3 + flow * 1.6;
     float fade = 1.0 - smoothstep(uRadius * 0.25, uRadius, distance(vWorld, uFocus));
     // сетка ярче под курсором
     float near = (1.0 - smoothstep(0.0, 5.0, distance(vWorld, uPointer))) * uPointerOn;
     // волна от клика и от пришедшего пакета: кольцо расходится от точки uRipple.xy
     float age = uRipple.z;
     float ring = (1.0 - smoothstep(0.0, 1.6, abs(distance(vWorld, uRipple.xy) - age * 18.0))) * max(0.0, 1.0 - age / 1.6);
-    vec3 tint = mix(uColor, uAccent, clamp(ring + near * 0.35, 0.0, 1.0));
+    vec3 tint = mix(uColor, uAccent, clamp(ring + near * 0.35 + flow * 0.25, 0.0, 1.0));
     gl_FragColor = vec4(tint, pattern * fade * (1.0 + near * 1.8 + ring * 3.0));
+  }
+`
+
+const TRACE_FRAGMENT = /* glsl */ `
+  uniform vec3 uColor;
+  uniform vec3 uFlow;
+  uniform float uTime;
+  uniform float uLit;
+  varying vec2 vWorld;
+  // по дорожке бежит ток: светлые штрихи вдоль шины, у выбранного проекта ярче
+  void main() {
+    float dash = smoothstep(0.55, 1.0, fract((vWorld.x + vWorld.y) * 0.35 - uTime * 0.9));
+    gl_FragColor = vec4(mix(uColor, uFlow * 1.25, dash * (0.35 + 0.65 * uLit)), 1.0);
   }
 `
 
@@ -202,6 +236,8 @@ function sampleLeg(leg: Leg, dist: number, out: Vector3): void {
 }
 
 function buildMap() {
+  // общее время для шейдеров: ток по шинам и движение по сетке
+  const map0 = { time: { value: 0 } }
   const root = new Group()
   root.add(new AmbientLight(0xffffff, 2.2))
   const sun = new DirectionalLight(0xffffff, 3.2)
@@ -211,6 +247,7 @@ function buildMap() {
   const footprint = footprintGeometry()
   const outline = padGeometry([[0, 0]], FOOTPRINT * 2)
   const outlineMat = new LineBasicMaterial({ color: C.edgeDim, transparent: true, opacity: 0.45 })
+  const ledGeometry = new BoxGeometry(0.22, 0.12, 0.22)
   const leaderGeometry = new BufferGeometry()
   leaderGeometry.setAttribute('position', new Float32BufferAttribute([0, 0, 0, 0, 1, 0], 3))
   const scanGeometry = new BufferGeometry()
@@ -251,16 +288,24 @@ function buildMap() {
     label.renderOrder = 10
     const leaderMat = new LineBasicMaterial({ color: C.edgeDim, transparent: true })
     const leader = new LineSegments(leaderGeometry, leaderMat)
-    group.add(body, new LineSegments(footprint, footMat), new LineSegments(outline, outlineMat), label, leader, scan)
+    // огонёк статуса в углу площадки: мигает, когда в узел приходит пакет
+    const ledMat = new MeshBasicMaterial({ color: C.edgeDim, fog: false })
+    const led = new Mesh(ledGeometry, ledMat)
+    led.position.set(FOOTPRINT - 0.35, 0.06, FOOTPRINT - 0.35)
+    group.add(body, new LineSegments(footprint, footMat), new LineSegments(outline, outlineMat), label, leader, scan, led)
     root.add(group)
-    return { id, body, solidMat, edgeMat, mirrorMat, footMat, label, labelMat, leader, leaderMat, scan, scanMat, height: shape.height, lift: 1, focus: 0, kick: 0 }
+    return { id, body, solidMat, edgeMat, mirrorMat, footMat, label, labelMat, leader, leaderMat, scan, scanMat, ledMat, height: shape.height, lift: 1, focus: 0, kick: 0, hover: 0 }
   })
 
   // связи: тонкая дорожка поверх широкой тёмной шины, у входа в узел — контактная площадка
   const ports: Point[] = []
   const traces = EDGES.map((edge) => {
     const points = edgePoints(edge.path)
-    const material = new MeshBasicMaterial({ color: C.trace })
+    const material = new ShaderMaterial({
+      vertexShader: GRID_VERTEX,
+      fragmentShader: TRACE_FRAGMENT,
+      uniforms: { uColor: { value: C.trace.clone() }, uFlow: { value: C.traceOn.clone() }, uTime: map0.time, uLit: { value: 0 } },
+    })
     const bandMaterial = new MeshBasicMaterial({ color: C.band, transparent: true, opacity: 0.9, depthWrite: false })
     const band = new Mesh(traceGeometry(points, BAND_WIDTH, 0.005), bandMaterial)
     band.renderOrder = -0.5
@@ -304,6 +349,7 @@ function buildMap() {
       uPointer: { value: new Vector2() },
       uPointerOn: { value: 0 },
       uRipple: { value: new Vector3(0, 0, 99) },
+      uTime: map0.time,
     },
     transparent: true,
     depthWrite: false,
@@ -318,7 +364,25 @@ function buildMap() {
   packetMesh.frustumCulled = false
   root.add(packetMesh)
 
-  return { root, nodes, traces, grid, packetMesh }
+  // «серверный город» на горизонте: низкие стойки вокруг карты, их съедает туман
+  const horizon = horizonGeometry()
+  const horizonSolid = new Mesh(horizon.solid, new MeshLambertMaterial({ color: C.solid }))
+  const horizonEdges = new LineSegments(horizon.edges, new LineBasicMaterial({ color: color(PALETTE.horizon) }))
+  root.add(horizonSolid, horizonEdges)
+
+  // подложки колонок: через одну чуть светлее пола, чтобы колонки читались как полосы
+  LANES.forEach((lane, i) => {
+    if (i % 2) return
+    const plate = new Mesh(
+      new PlaneGeometry(lane.to - lane.from, near - far).rotateX(-Math.PI / 2),
+      new MeshBasicMaterial({ color: color(PALETTE.lanePlate), transparent: true, opacity: 0.22, depthWrite: false }),
+    )
+    plate.position.set((lane.from + lane.to) / 2, 0.002, (far + near) / 2)
+    plate.renderOrder = -0.8
+    root.add(plate)
+  })
+
+  return { root, nodes, traces, grid, packetMesh, time: map0.time }
 }
 
 /** Вклад главы в состояние узла: в фокусе ли он и поднят ли в полный рост. */
@@ -328,6 +392,14 @@ function chapterState(chapter: number, id: NodeId): [focus: number, lift: number
   return [focused ? 1 : 0, focused || overview ? 1 : LOW]
 }
 
+const mixShot = (a: Shot, b: Shot, f: number): Shot => ({
+  x: MathUtils.lerp(a.x, b.x, f),
+  z: MathUtils.lerp(a.z, b.z, f),
+  dist: MathUtils.lerp(a.dist, b.dist, f),
+  azimuth: MathUtils.lerp(a.azimuth, b.azimuth, f),
+  polar: MathUtils.lerp(a.polar, b.polar, f),
+  narrow: MathUtils.lerp(a.narrow, b.narrow, f),
+})
 
 interface SystemSceneProps {
   /** служебный режим: карта замерла на этой главе, пакетов нет */
@@ -436,11 +508,12 @@ export function SystemScene({ posterChapter, onReady }: SystemSceneProps) {
     if (!still) clock.current += dt
     const time = clock.current
     const wide = size.width >= WIDE
-    const hero = still ? 1 : getHero()
+    const project = still ? !OVERVIEW_CHAPTERS.includes(posterChapter as number) : isProjectPage()
+    const explore = still ? 0 : getExplore()
 
     // точка схода: на странице проекта карта левее центра, на первом экране главной выше
-    const wantX = wide ? -(chapter === null || OVERVIEW_CHAPTERS.includes(chapter) ? SHIFT_X_OVERVIEW : SHIFT_X) : 0
-    const wantY = wide ? 0 : SHIFT_Y_NARROW
+    const wantX = wide ? (project ? SHIFT_PROJECT_X : -SHIFT_EXPLORE_X * explore) : 0
+    const wantY = wide ? (project ? 0.03 : SHIFT_HERO_Y * (1 - explore) * (chapter === null ? 1 : 0.3)) : SHIFT_Y_NARROW
     const sh = shift.current
     const kShift = still || !sh.started ? 1 : 1 - Math.exp(-3.2 * dt)
     sh.x += (wantX - sh.x) * kShift
@@ -449,14 +522,14 @@ export function SystemScene({ posterChapter, onReady }: SystemSceneProps) {
     ;(camera as PerspectiveCamera).setViewOffset(size.width, size.height, size.width * sh.x, size.height * sh.y, size.width, size.height)
 
     // камера: на проекте стоит у его узла, иначе общий вид, который опускается к карте по скроллу
-    const want = SHOTS[chapter ?? 0]
+    const want = chapter === null ? mixShot(SHOTS[0], EXPLORE_SHOT, explore) : SHOTS[chapter]
     const r = rig.current
     const k = ease(3.2)
     r.x += (want.x - r.x) * k
     r.z += (want.z - r.z) * k
     r.dist += (want.dist - r.dist) * k
-    // на первом экране карта медленно поворачивается, у выбранного проекта почти замирает: подпись не уплывает
-    const drift = Math.sin(time * DRIFT_SPEED) * DRIFT_ANGLE * (chapter === null ? 0.4 + 0.6 * hero : 0.25)
+    // в блоке услуг поворот почти стихает: подписи у узлов не уплывают, пока их читают
+    const drift = Math.sin(time * DRIFT_SPEED) * DRIFT_ANGLE * (chapter === null ? 1 - 0.9 * explore : 0.5)
     r.azimuth += (want.azimuth + drift + pointer.current.x * 5 - r.azimuth) * k
     r.polar += (want.polar - pointer.current.y * 2.5 - r.polar) * k
     r.narrow += (want.narrow - r.narrow) * k
@@ -489,6 +562,9 @@ export function SystemScene({ posterChapter, onReady }: SystemSceneProps) {
       if (raycaster.ray.intersectPlane(groundPlane, point)) (map.grid.uniforms.uPointer.value as Vector2).set(point.x, point.z)
     }
 
+    map.time.value = time
+    const hovered = still ? null : getHovered()
+
     // узлы
     const kNode = ease(5)
     map.nodes.forEach((node, index) => {
@@ -498,7 +574,8 @@ export function SystemScene({ posterChapter, onReady }: SystemSceneProps) {
       node.focus += (focus - node.focus) * kNode
       node.lift += (lift * grown - node.lift) * (still ? 1 : 1 - Math.exp(-9 * dt))
       node.kick = Math.max(0, node.kick - dt * 2.2)
-      const bump = 1 + node.kick * 0.05
+      node.hover += ((hovered === node.id ? 1 : 0) - node.hover) * kNode
+      const bump = 1 + node.kick * 0.05 + node.hover * 0.06
       node.body.scale.set(bump, Math.max(0.001, node.lift * bump), bump)
       node.scan.position.y = (0.5 + 0.5 * Math.sin(time * 1.7 + index)) * node.height * node.lift
       node.scanMat.opacity = still ? 0 : node.focus * 0.9
@@ -508,12 +585,15 @@ export function SystemScene({ posterChapter, onReady }: SystemSceneProps) {
       node.label.position.y = top + LEADER
       const raised = (node.lift - LOW) / (1 - LOW)
       mixed.lerpColors(C.edgeDim, C.edge, raised)
-      node.edgeMat.color.copy(mixed).lerp(C.accent, Math.max(node.focus, node.kick * 0.9))
+      node.edgeMat.color.copy(mixed).lerp(C.accent, Math.max(node.focus, node.kick * 0.9, node.hover * 0.75))
       node.mirrorMat.color.copy(node.edgeMat.color)
       node.solidMat.color.lerpColors(C.solid, C.solidOn, node.focus)
-      node.footMat.color.lerpColors(C.edgeDim, C.accent, node.focus)
-      node.labelMat.color.lerpColors(C.label, C.labelOn, Math.max(node.focus, node.kick))
-      node.labelMat.opacity = 0.45 + 0.55 * Math.max(raised, node.focus)
+      node.footMat.color.lerpColors(C.edgeDim, C.accent, Math.max(node.focus, node.hover))
+      node.labelMat.color.lerpColors(C.label, C.labelOn, Math.max(node.focus, node.kick, node.hover))
+      node.labelMat.opacity = 0.45 + 0.55 * Math.max(raised, node.focus, node.hover)
+      // огонёк: ровно тлеет, вспыхивает от пришедшего пакета, у выбранного узла горит
+      const idle = still ? 0.6 : 0.45 + 0.35 * Math.sin(time * 1.3 + index * 1.7)
+      node.ledMat.color.lerpColors(C.edgeDim, C.edge, idle).lerp(C.accent, Math.min(1, Math.max(node.kick, node.focus * 0.9, node.hover)))
       node.leaderMat.color.lerpColors(C.edgeDim, C.accent, Math.max(node.focus, node.kick))
       // кнопка и подпись узла в интерфейсе привязаны к его основанию
       point.set(NODES[node.id].x, 0, NODES[node.id].z).project(camera)
@@ -521,7 +601,8 @@ export function SystemScene({ posterChapter, onReady }: SystemSceneProps) {
     })
     map.traces.forEach((trace) => {
       const lit = Math.max(map.nodes[trace.from].focus, map.nodes[trace.to].focus)
-      trace.material.color.lerpColors(C.trace, C.traceOn, lit)
+      ;(trace.material.uniforms.uColor.value as Color).lerpColors(C.trace, C.traceOn, lit)
+      trace.material.uniforms.uLit.value = lit
       trace.bandMaterial.color.lerpColors(C.band, C.bandOn, lit)
     })
 

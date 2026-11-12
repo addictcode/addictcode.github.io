@@ -4,7 +4,7 @@ import { CHAPTER_NODE, route } from './graph'
 import { getChapter, onViewChange } from './view'
 
 /** области, клик по которым не считается кликом по карте */
-const NOT_MAP = '.hero__body, .section > *, .page, .topbar, a, button, input, select, label'
+const NOT_MAP = '.chapter__body, .topbar, .card, a, button, input, select, label'
 
 /**
  * Превращает действия посетителя в события карты:

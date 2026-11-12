@@ -1,16 +1,20 @@
-import { languages } from '../content'
+import { chapterIds, languages } from '../content'
 import { profile, telegramUrl } from '../content/profile'
 import { useLang } from '../i18n/LangContext'
 import { emit } from '../system/bus'
-import { SECTIONS } from '../system/graph'
+import { FIRST_LAB_CHAPTER } from '../system/graph'
+import { useChapter } from '../system/view'
+
+const PROJECTS = [1, 2, 3, 4, 5]
 
 export function Header() {
   const { t, lang, setLang } = useLang()
+  const current = useChapter()
 
   const switchLang = (code: typeof lang) => {
     if (code === lang) return
     setLang(code)
-    emit({})
+    emit({ broadcast: true })
   }
 
   return (
@@ -18,15 +22,20 @@ export function Header() {
       <a className="topbar__brand" href="#/" data-log="off">
         {profile.studio}
       </a>
-      <nav className="topbar__nav" aria-label={t.ui.chapterNav}>
+      <nav className="topbar__nav mono" aria-label={t.ui.projects}>
         <ol>
-          {SECTIONS.map((id) => (
-            <li key={id}>
-              <a href={`#${id}`} data-log="off">
-                {t.home.nav[id]}
+          {PROJECTS.map((chapter) => (
+            <li key={chapter}>
+              <a href={`#/${chapterIds[chapter]}`} aria-current={chapter === current ? 'page' : undefined} data-log="off">
+                {t.chapters[chapter]}
               </a>
             </li>
           ))}
+          <li>
+            <a href={`#/${chapterIds[FIRST_LAB_CHAPTER]}`} aria-current={current !== null && current >= FIRST_LAB_CHAPTER ? 'page' : undefined} data-log="off">
+              {t.ui.demo}
+            </a>
+          </li>
         </ol>
       </nav>
       <div className="topbar__tools">

@@ -162,20 +162,11 @@ export const CHAPTER_FOCUS: NodeId[][] = [
 
 /** Главы с общим видом карты: вступление и контакты. */
 export const OVERVIEW_CHAPTERS = [0, 6]
-/** Главы проектов на главной, по порядку. */
-export const PROJECT_CHAPTERS = [1, 2, 3, 4, 5] as const
-/** Глава контактов: своей страницы у неё нет. */
-export const CONTACT_CHAPTER = 6
 /** Первая глава демо-прототипов: главы с неё и дальше — прототипы на выдуманных данных. */
 export const FIRST_LAB_CHAPTER = 7
 /** Ключи прототипов в контенте (`lab.items`), по порядку глав. */
 export const LAB_KEYS = ['booking', 'shop', 'assistant', 'crm', 'prices', 'cabinet'] as const
 export type LabKey = (typeof LAB_KEYS)[number]
-export const LAB_CHAPTERS = LAB_KEYS.map((_, i) => FIRST_LAB_CHAPTER + i)
-/** Сколько первых строк `offer.items` подтверждены готовыми проектами; остальные — демо-прототипы. */
-export const REAL_OFFERS = 9
-/** Разделы главной: по ним ходит навигация в шапке. */
-export const SECTIONS = ['services', 'projects', 'demos', 'contact'] as const
 
 /** Узел, от которого и к которому идёт пакет при переходе между главами. */
 export const CHAPTER_NODE: NodeId[] = ['client', 'site', 'bot', 'crm', 'stream', 'parser', 'client', 'booking', 'shop', 'assistant', 'sync', 'prices', 'billing']
@@ -207,6 +198,8 @@ export const SHOTS: Shot[] = [
   { x: 2, z: 15, dist: 22, azimuth: -32, polar: 56, narrow: 1.25 },
 ]
 
+/** Общий вид карты на главной, когда посетитель долистал до блока с услугами: карта по центру, ближе и круче сверху. */
+export const EXPLORE_SHOT: Shot = { x: 1, z: 4.5, dist: 76, azimuth: -16, polar: 34, narrow: 1.3 }
 
 /** Какую главу открывает узел по клику. */
 export const NODE_CHAPTER: Record<NodeId, number> = {
