@@ -1,25 +1,25 @@
 import { Canvas } from '@react-three/fiber'
-import { SystemScene } from './SystemScene'
+import type { ShapeId } from '../system/graph'
+import { VoxelScene } from './VoxelScene'
 
 interface SystemCanvasProps {
-  posterChapter?: number | null
+  posterShape?: ShapeId | null
   onReady: () => void
 }
 
-/** Холст карты. Лежит под текстом и не перехватывает указатель. */
-export default function SystemCanvas({ posterChapter = null, onReady }: SystemCanvasProps) {
-  const narrow = window.innerWidth < 1100
+/** Холст скульптуры. Лежит под текстом и не перехватывает указатель. */
+export default function SystemCanvas({ posterShape = null, onReady }: SystemCanvasProps) {
+  const narrow = window.innerWidth < 900
   return (
     <Canvas
       className="stage__canvas"
-      flat
       dpr={[1, narrow ? 1.5 : 2]}
-      camera={{ fov: 30, near: 0.5, far: 300 }}
+      camera={{ fov: 32, near: 0.5, far: 200 }}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       style={{ pointerEvents: 'none' }}
       aria-hidden="true"
     >
-      <SystemScene posterChapter={posterChapter} onReady={onReady} />
+      <VoxelScene posterShape={posterShape} onReady={onReady} />
     </Canvas>
   )
 }
