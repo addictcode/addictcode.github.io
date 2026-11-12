@@ -25,7 +25,7 @@ export function Hotspots() {
   }
 
   return (
-    <div className="hotspots" data-tags={route === null || undefined}>
+    <div className="hotspots" data-tags={route === null || undefined} data-selected={(route === null && current !== null) || undefined}>
       {NODE_IDS.map((id) => (
         <button
           key={id}

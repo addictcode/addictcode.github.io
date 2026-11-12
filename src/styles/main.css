@@ -1032,6 +1032,10 @@ label > .mono {
   display: none;
 }
 
+.hero__aside > * + * {
+  margin-top: 20px;
+}
+
 /* ───────── Услуги ───────── */
 .offer {
   border-bottom: 1px solid var(--line);
@@ -1247,6 +1251,10 @@ label > .mono {
     letter-spacing: -0.035em;
   }
 
+  .hero__aside > * + * {
+    margin-top: 0;
+  }
+
   .hero__aside {
     display: grid;
     gap: 20px;
@@ -1323,6 +1331,16 @@ label > .mono {
     white-space: nowrap;
     translate: -50% 0;
     opacity: var(--explore, 0);
+  }
+
+  /* выбран проект: остаётся подпись только его узлов */
+  .hotspots[data-selected] .hotspot:not([aria-pressed='true']) .hotspot__tag {
+    opacity: 0;
+  }
+
+  /* блок с картой встаёт ровно в экран, без отступа под шапку */
+  #offer {
+    scroll-margin-top: calc(-1 * (var(--topbar) + 16px));
   }
 
   .hotspot__tag::before {
