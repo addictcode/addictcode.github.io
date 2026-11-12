@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { chapterIds } from '../content'
 import { githubUrl, profile, telegramUrl } from '../content/profile'
 import { useLang } from '../i18n/LangContext'
-import { OFFER_CHAPTER } from '../system/graph'
+import { FIRST_LAB_CHAPTER, OFFER_CHAPTER } from '../system/graph'
 import { select, useExploreScroll, useSelected } from '../system/view'
 import { ArrowRight } from './Icons'
 import { ExternalLink } from './Links'
@@ -68,7 +68,7 @@ export function Home() {
         <div className="chapter__window" aria-hidden="true" />
         <div className="chapter__body">
           <p className="eyebrow mono">
-            <b>{t.hero.name}</b>
+            <b>{profile.studio}</b>
             <span>{t.hero.role}</span>
           </p>
           <h1 id="intro-title">{t.hero.title}</h1>
@@ -106,7 +106,10 @@ export function Home() {
                   data-offer={chapterIds[OFFER_CHAPTER[i]]}
                   onClick={() => select(OFFER_CHAPTER[i])}
                 >
-                  <b>{item.name}</b>
+                  <b>
+                    {item.name}
+                    {OFFER_CHAPTER[i] >= FIRST_LAB_CHAPTER && <i className="mono">{t.lab.demoTag}</i>}
+                  </b>
                   <span>{item.text}</span>
                 </button>
               </li>

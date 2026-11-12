@@ -5,7 +5,7 @@ import { mkdir } from 'node:fs/promises'
 import sharp from 'sharp'
 import { launchBrowser, startSite } from './browser.mjs'
 
-const CHAPTERS = 7
+const CHAPTERS = 13
 // широкий кадр для десктопа и вертикальный для телефона
 const SIZES = [
   { suffix: '', width: 1600, height: 1000 },

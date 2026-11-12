@@ -1,3 +1,5 @@
+import type { labRu } from './lab.ru'
+
 export type Lang = 'ru' | 'en'
 
 export interface Fact {
@@ -43,7 +45,6 @@ export interface Content {
   /** названия глав: подписи в навигации */
   chapters: string[]
   hero: {
-    name: string
     role: string
     title: string
     phrase: string
@@ -144,4 +145,6 @@ export interface Content {
     hint: string
     items: { name: string; text: string }[]
   }
+  /** страница «Демо»: прототипы на выдуманных данных */
+  lab: typeof labRu
 }

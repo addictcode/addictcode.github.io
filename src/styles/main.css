@@ -1159,6 +1159,287 @@ label > .mono {
   margin-right: 6px;
 }
 
+/* ───────── Демо-прототипы ───────── */
+.lab,
+.lab-nav {
+  margin-top: 32px !important;
+}
+
+.lab__cols,
+.lab__stack {
+  display: grid;
+  gap: 10px;
+}
+
+.lab .panel > * + * {
+  margin-top: 12px;
+}
+
+.chat {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-height: 96px;
+}
+
+.bubble--me {
+  justify-self: end;
+  background: var(--bg);
+  border-color: var(--line-strong);
+  border-radius: 10px 10px 2px 10px;
+}
+
+.opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.opts .btn,
+.goods .btn,
+.leadcard .btn {
+  min-height: 38px;
+  padding: 0 12px;
+  font-size: 0.875rem;
+}
+
+.lab__state {
+  min-height: 1.5em;
+  color: var(--accent);
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.table th {
+  padding: 0 10px 8px 0;
+  text-align: left;
+  font-weight: 400;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.table td {
+  padding: 8px 10px 8px 0;
+  border-top: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.table td.is-low {
+  color: var(--accent);
+}
+
+.kpi {
+  display: grid;
+}
+
+.kpi span {
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.kpi b {
+  font-size: 1.75rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+.goods {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.goods li {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.goods b {
+  font-weight: 500;
+}
+
+.goods .mono {
+  color: var(--muted);
+}
+
+.goods .btn {
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.ask {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.kb__text {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.pipeline {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.pipeline > div {
+  min-height: 120px;
+  padding: 10px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.pipeline > div > * + * {
+  margin-top: 8px;
+}
+
+.leadcard {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  background: var(--raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  overflow-wrap: anywhere;
+}
+
+.leadcard .mono {
+  color: var(--muted);
+}
+
+.leadcard .btn {
+  justify-content: center;
+}
+
+.synclog {
+  min-height: 72px;
+  color: var(--muted);
+}
+
+.synclog li:last-child {
+  color: var(--ink);
+}
+
+.spark {
+  display: block;
+  width: 96px;
+  height: 24px;
+  color: var(--accent);
+}
+
+.plans {
+  display: grid;
+  gap: 8px;
+}
+
+.plans button {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  text-align: left;
+  cursor: pointer;
+}
+
+.plans button[aria-pressed='true'] {
+  border-color: var(--accent);
+}
+
+.plans b {
+  font-weight: 500;
+}
+
+.plans__price {
+  font-size: 1.5rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.plans span:last-child,
+.plans .mono {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+}
+
+.seg button {
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.seg button[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.lab-nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.lab-nav a {
+  display: block;
+  padding: 7px 11px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+.lab-nav a:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.offer i {
+  margin-left: 8px;
+  font-style: normal;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+@media (min-width: 560px) {
+  .lab__cols {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .plans {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 /* ───────── Широкий экран: карта во весь экран, текст по краям и на самой карте ───────── */
 @media (min-width: 1100px) {
   :root {
@@ -1318,13 +1599,13 @@ label > .mono {
     display: grid;
     gap: 3px;
     margin-top: 14px;
-    padding: 7px 11px 8px;
+    padding: 5px 9px 6px;
     background: var(--panel);
     border: 1px solid var(--line-strong);
     border-left: 2px solid var(--accent);
     border-radius: var(--radius);
     font-family: var(--font-text);
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
     line-height: 1.25;
     color: var(--ink);
     text-align: left;
@@ -1355,6 +1636,15 @@ label > .mono {
 
   .hotspot__tag b {
     font-weight: 500;
+  }
+
+  .hotspot__tag i {
+    margin-left: 6px;
+    font-size: 0.5625rem;
+    font-style: normal;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
   }
 
   .hotspot:hover .hotspot__tag,
