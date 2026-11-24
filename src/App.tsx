@@ -1,6 +1,8 @@
 import { Contact, Footer } from './components/Contact'
 import { Header } from './components/Header'
 import { Journey } from './components/Journey'
+import { Services } from './components/Services'
+import { Terms } from './components/Terms'
 import { StackBand } from './components/StackBand'
 import { Works } from './components/Works'
 import { LangProvider, useLang } from './i18n/LangContext'
@@ -21,8 +23,10 @@ export default function App() {
       <Header />
       <main id="main">
         <Journey />
+        <Services />
         <StackBand />
         <Works />
+        <Terms />
         <Contact />
       </main>
       <Footer />

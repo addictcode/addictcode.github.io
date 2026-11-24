@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { githubUrl, profile, telegramUrl } from '../content/profile'
 import { useLang } from '../i18n/LangContext'
 import { ArrowOut, Tick } from './Icons'
 import { ExternalLink } from './ExternalLink'
+import { onPickService } from './pick'
 
 /**
  * Последний экран: та же карточка заявки, только настоящая.
@@ -13,6 +14,9 @@ export function Contact() {
   const c = t.contact
   const [needs, setNeeds] = useState<number[]>([])
   const [about, setAbout] = useState('')
+
+  /* «Выбрать» у услуги отмечает её здесь; номера услуг и пунктов заявки совпадают */
+  useEffect(() => onPickService((index) => setNeeds((prev) => (prev.includes(index) ? prev : [...prev, index].sort()))), [])
 
   const href = useMemo(() => {
     const lines = [c.message.hello]

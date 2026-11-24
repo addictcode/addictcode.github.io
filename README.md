@@ -23,6 +23,8 @@ npm run lint
 | Название студии, Telegram-ник, GitHub | `src/content/profile.ts`; название ещё стоит в `index.html` (title, og-теги, noscript) и в `meta.title` в `ru.ts` / `en.ts` |
 | Ссылки проектов (код, демо) | `workLinks` в `src/content/profile.ts` |
 | Тексты на русском и английском | `src/content/ru.ts`, `src/content/en.ts` |
+| Услуги, цены, сроки | `services` в `ru.ts` / `en.ts`; порядок услуг совпадает с пунктами заявки `contact.needs` |
+| Условия работы и частые вопросы | `terms` и `faq` в `ru.ts` / `en.ts` |
 | Проекты в «Работах» | `works.items` в `ru.ts` / `en.ts`; схемы проектов — `src/components/Previews.tsx` |
 | Путь заявки: тайминги и раскладка | `src/components/Journey.tsx` (ключи карточки, окна шагов) |
 | Декорации пути: сайт, телефон, доска CRM | `src/components/scenes.tsx` |

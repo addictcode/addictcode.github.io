@@ -13,6 +13,18 @@ export interface Work {
   stack: string
 }
 
+export interface Service {
+  name: string
+  /** кому подходит */
+  forWho: string
+  /** что входит в основной пакет */
+  points: string[]
+  price: string
+  time: string
+  /** где это уже работает */
+  proof: string
+}
+
 export interface Step {
   name: string
   title: string
@@ -25,7 +37,7 @@ export interface Content {
   meta: { title: string; description: string }
   ui: {
     skip: string
-    nav: { how: string; works: string; contact: string }
+    nav: { services: string; works: string; terms: string; contact: string }
     navLabel: string
     langSwitch: string
     cta: string
@@ -54,6 +66,25 @@ export interface Content {
     form: { title: string; name: string; nameValue: string; task: string; taskValue: string; source: string; sourceValue: string; send: string; sent: string }
     note: { chat: string; bot: string; now: string; title: string; reply: string; copy: string }
     board: { title: string; columns: [string, string, string, string, string]; paid: string }
+  }
+  services: {
+    label: string
+    title: string
+    lead: string
+    items: Service[]
+    choose: string
+    note: string
+  }
+  terms: {
+    label: string
+    title: string
+    steps: { name: string; text: string }[]
+    rules: string[]
+  }
+  faq: {
+    label: string
+    title: string
+    items: { q: string; a: string }[]
   }
   stack: string[]
   works: {

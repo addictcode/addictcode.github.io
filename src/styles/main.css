@@ -1565,6 +1565,225 @@ textarea {
   height: 22px;
 }
 
+/* ───────── Услуги ───────── */
+.services {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 40px;
+  padding: 96px var(--gutter) 80px;
+  background: var(--bg);
+}
+
+.services__note {
+  max-width: 30em;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.services__list {
+  border-top: 1px solid var(--line-strong);
+}
+
+.service {
+  display: grid;
+  gap: 12px;
+  padding: 26px 0;
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.service__top {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+
+.service__no {
+  color: var(--muted);
+}
+
+.service h3 {
+  font-size: clamp(1.35rem, 2.4vw, 2rem);
+  font-weight: 550;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+}
+
+.service__for {
+  color: var(--muted);
+}
+
+.service__points {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.service__points li {
+  padding: 6px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  font-size: 0.875rem;
+}
+
+.service__proof {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.service__proof::before {
+  content: '✓✓ ';
+  color: var(--accent);
+  letter-spacing: -0.2em;
+  margin-right: 0.3em;
+}
+
+.service__buy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.service__buy p {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+
+.service__buy b {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--accent);
+}
+
+.service__buy .mono {
+  color: var(--muted);
+}
+
+/* ───────── Как работаем ───────── */
+.terms,
+.faq {
+  position: relative;
+  z-index: 1;
+  padding: 80px var(--gutter);
+  background: var(--bg);
+}
+
+.terms__steps {
+  display: grid;
+  gap: 2px;
+  margin-top: 40px;
+  counter-reset: step;
+}
+
+.terms__steps li {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 4px 12px;
+  padding: 18px 0;
+  border-top: 1px solid var(--line-strong);
+}
+
+.terms__steps .mono {
+  grid-row: span 2;
+  color: var(--accent);
+}
+
+.terms__steps b {
+  font-size: 1.25rem;
+  font-weight: 550;
+  letter-spacing: -0.02em;
+}
+
+.terms__steps p {
+  color: var(--muted);
+}
+
+.terms__rules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 32px;
+}
+
+.terms__rules li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--raised);
+  font-size: 0.9375rem;
+}
+
+.terms__rules svg {
+  width: 14px;
+  height: 11px;
+  color: var(--accent);
+}
+
+/* ───────── Вопросы ───────── */
+.faq {
+  padding-top: 0;
+}
+
+.faq__list {
+  margin-top: 36px;
+  border-top: 1px solid var(--line-strong);
+}
+
+.faq__item {
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.faq__item summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 0;
+  font-size: clamp(1.0625rem, 1.6vw, 1.375rem);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  list-style: none;
+  cursor: pointer;
+}
+
+.faq__item summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq__icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  transition: transform 0.4s var(--ease);
+}
+
+.faq__item[open] .faq__icon {
+  transform: rotate(45deg);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.faq__item p {
+  max-width: 44em;
+  padding-bottom: 22px;
+  color: var(--muted);
+}
+
 /* ───────── Связаться ───────── */
 .contact {
   position: relative;
@@ -2002,6 +2221,58 @@ textarea {
 
   .work__title {
     font-size: clamp(1.75rem, 3vw, 2.75rem);
+  }
+
+  .services {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    align-items: start;
+    gap: 6vw;
+    padding-top: 150px;
+  }
+
+  .services__head h2,
+  .faq h2 {
+    font-size: clamp(2.5rem, 4.6vw, 4.75rem);
+  }
+
+  .services__head {
+    position: sticky;
+    top: calc(var(--topbar) + 32px);
+  }
+
+  .service {
+    padding: 32px 0;
+  }
+
+  .terms {
+    padding-top: 140px;
+  }
+
+  .terms__steps {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
+  }
+
+  .terms__steps li {
+    grid-template-columns: 1fr;
+    align-content: start;
+    gap: 8px;
+    padding: 20px 0 0;
+  }
+
+  .terms__steps .mono {
+    grid-row: auto;
+  }
+
+  .faq {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: 6vw;
+    padding-bottom: 40px;
+  }
+
+  .faq__list {
+    margin-top: 0;
   }
 
   .contact h2 {
