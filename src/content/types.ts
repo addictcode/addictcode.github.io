@@ -1,163 +1,82 @@
-import type { labRu } from './lab.ru'
-
 export type Lang = 'ru' | 'en'
 
-export interface Fact {
-  /** короткая метка слева */
-  k: string
-  text: string
-}
+export type WorkId = 'dealer' | 'crm' | 'vinted' | 'tender' | 'pulse' | 'engine'
 
-export interface MetaRow {
-  label: string
-  value: string
-}
-
-export interface CaseContent {
-  kicker: string
+export interface Work {
+  id: WorkId
   title: string
+  /** что это за проект: заказ, открытый код, демо-данные */
+  meta: string
+  tags: string[]
   lead: string
-  facts: Fact[]
-  /** остальное одной строкой, чтобы не раздувать список */
-  more?: string
-  stack: MetaRow[]
+  facts: string[]
+  stack: string
+}
+
+export interface Step {
+  name: string
+  title: string
+  text: string
+  /** где это уже работает: факт из кейса */
+  proof: string
 }
 
 export interface Content {
   meta: { title: string; description: string }
   ui: {
     skip: string
-    chapterNav: string
+    nav: { how: string; works: string; contact: string }
+    navLabel: string
     langSwitch: string
+    cta: string
     telegram: string
     github: string
-    repo: string
+    code: string
     liveDemo: string
-    demo: string
-    externalHint: string
-    stageAlt: string
-    more: string
+    external: string
+    open: string
     close: string
-    back: string
-    projects: string
-    openProject: string
   }
-  /** названия глав: подписи в навигации */
-  chapters: string[]
   hero: {
-    role: string
-    title: string
-    phrase: string
-    cta: string
-    hint: string
+    eyebrow: string
+    /** заголовок: текст до слова-карточки, само слово, текст после */
+    before: string
+    chip: string
+    after: string
+    lead: string
+    secondary: string
+    cue: string
   }
-  site: CaseContent & {
-    mock: {
-      caption: string
-      searchLabel: string
-      searchPlaceholder: string
-      understood: string
-      found: string
-      empty: string
-      catalog: string[]
-    }
+  story: {
+    label: string
+    steps: [Step, Step, Step]
+    outro: { title: string; text: string }
+    form: { title: string; name: string; nameValue: string; task: string; taskValue: string; source: string; sourceValue: string; send: string; sent: string }
+    note: { chat: string; bot: string; now: string; title: string; reply: string; copy: string }
+    board: { title: string; columns: [string, string, string, string, string]; paid: string }
   }
-  bot: CaseContent & {
-    monitor: {
-      title: string
-      note: string
-      brand: string
-      anyBrand: string
-      size: string
-      anySize: string
-      priceTo: string
-      start: string
-      stop: string
-      restart: string
-      checked: string
-      found: string
-      feed: string
-      alerts: string
-      idle: string
-      noAlerts: string
-      done: string
-      newListing: string
-      items: string[]
-      botName: string
-    }
-  }
-  crm: CaseContent & {
-    pipelineLabel: string
-    pipeline: string[]
-    mock: {
-      caption: string
-      title: string
-      crews: string[]
-      days: string[]
-      legend: string[]
-    }
-  }
-  realtime: {
+  stack: string[]
+  works: {
+    label: string
     title: string
     lead: string
-    pulse: CaseContent & { imageAlt: string }
-    engine: CaseContent
-  }
-  parsing: CaseContent & {
-    shots: { alt: string; caption: string }[]
-    shotsNote: string
-  }
-  lead: {
-    title: string
-    intro: string
-    disclaimer: string
-    form: {
-      legend: string
-      name: string
-      namePlaceholder: string
-      need: string
-      needs: string[]
-      budget: string
-      budgets: string[]
-      submit: string
-      again: string
-    }
-    steps: string[]
-    bot: { title: string; botName: string; empty: string; newLead: string; from: string; need: string; budget: string }
-    crm: { title: string; cols: string[]; statusNew: string; statusQueued: string; seed: { name: string; need: string; status: string }[] }
-    dash: { title: string; today: string; total: string; days: string[]; caption: string }
-    done: string
-  }
-  skills: {
-    title: string
-    lead: string
-    groups: { name: string; items: string[] }[]
+    items: Work[]
+    search: { label: string; hint: string; understood: string; found: string; empty: string; catalog: string[] }
   }
   contact: {
-    title: string
+    label: string
+    /** заголовок: текст до слова-карточки, само слово, текст после */
+    title: [string, string, string]
     lead: string
-    stackLabel: string
-    footer: string
-  }
-  /** разделы главной */
-  home: {
-    nav: { services: string; projects: string; demos: string; contact: string }
-    scroll: string
-    servicesTitle: string
-    servicesLead: string
-    projectsTitle: string
-    projectsLead: string
-    openCase: string
-    demosTitle: string
-    demosLead: string
-    openDemo: string
-  }
-  /** услуги: порядок совпадает с `OFFER_CHAPTER` в `src/system/graph.ts` */
-  offer: {
-    title: string
+    card: string
+    needsLabel: string
+    needs: string[]
+    aboutLabel: string
+    aboutPlaceholder: string
+    send: string
     hint: string
-    items: { name: string; text: string }[]
+    message: { hello: string; need: string; about: string }
+    or: string
   }
-  /** страница «Демо»: прототипы на выдуманных данных */
-  lab: typeof labRu
+  footer: string
 }
