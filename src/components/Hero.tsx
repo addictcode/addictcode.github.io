@@ -5,16 +5,18 @@ import { ArrowDown, Ticks } from './Icons'
 import { ExternalLink } from './ExternalLink'
 
 interface HeroProps {
+  /** какое слово сейчас в плашке */
+  word?: number
   titleRef?: Ref<HTMLHeadingElement>
   chipRef?: Ref<HTMLSpanElement>
   restRef?: Ref<HTMLDivElement>
 }
 
 /**
- * Первый экран. Слово «заявка» в заголовке — это и есть карточка,
- * которая при скролле вылетает из фразы и проходит весь путь.
+ * Первый экран. Слово в плашке сменяется: заявки, ответы клиентам, запись, сбор цен, отчёты.
+ * При скролле плашка вылетает из фразы, становится карточкой и проходит путь сайт → бот → CRM.
  */
-export function Hero({ titleRef, chipRef, restRef }: HeroProps) {
+export function Hero({ word = 0, titleRef, chipRef, restRef }: HeroProps) {
   const { t, lang } = useLang()
   const h = t.hero
   return (
@@ -27,15 +29,19 @@ export function Hero({ titleRef, chipRef, restRef }: HeroProps) {
         <span className="line">
           <span className="line__in">{h.before}</span>
         </span>{' '}
+        <br />
         <span className="chip" ref={chipRef}>
           <i className="chip__dot" />
-          {h.chip}
+          <span key={word} className="chip__word">
+            {h.chips[word]}
+          </span>
           <span className="chip__ring" />
           <span className="chip__ring chip__ring--late" />
         </span>
-        <br />
-        <span className="line">
-          <span className="line__in line__in--late">{h.after}</span>
+        <span className="hero__after">
+          <span className="line">
+            <span className="line__in line__in--late">{h.after}</span>
+          </span>
         </span>
       </h1>
       <div className="hero__rest" ref={restRef}>

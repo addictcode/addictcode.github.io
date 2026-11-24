@@ -11,12 +11,12 @@ import { Tick, Ticks } from './Icons'
 
 /* ───── Лица карточки ───── */
 
-export function ChipFace() {
+export function ChipFace({ word }: { word: number }) {
   const { t } = useLang()
   return (
     <span className="face face--chip">
       <i className="chip__dot" />
-      {t.hero.chip}
+      {t.hero.chips[word]}
     </span>
   )
 }

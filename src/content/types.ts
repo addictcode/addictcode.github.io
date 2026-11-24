@@ -1,6 +1,6 @@
 export type Lang = 'ru' | 'en'
 
-export type WorkId = 'dealer' | 'crm' | 'vinted' | 'tender' | 'pulse' | 'engine'
+export type WorkId = 'dealer' | 'crm' | 'tender'
 
 export interface Work {
   id: WorkId
@@ -53,7 +53,8 @@ export interface Content {
     eyebrow: string
     /** заголовок: текст до слова-карточки, само слово, текст после */
     before: string
-    chip: string
+    /** слова в плашке сменяют друг друга: что именно автоматизируем */
+    chips: string[]
     after: string
     lead: string
     secondary: string

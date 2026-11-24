@@ -2,8 +2,8 @@ import type { Content } from './types'
 
 export const en: Content = {
   meta: {
-    title: 'addictcode — not a single lead gets lost',
-    description: 'A development studio. We build a website, a Telegram bot and a CRM into one system: a lead travels from the form to the payment on its own.',
+    title: 'addictcode — we automate leads, client replies and reports',
+    description: 'A development studio: websites, Telegram bots, AI assistants and CRMs that take the routine off your hands.',
   },
   ui: {
     skip: 'Skip to content',
@@ -21,38 +21,38 @@ export const en: Content = {
   },
   hero: {
     eyebrow: 'addictcode · development studio',
-    before: 'Not a single',
-    chip: 'lead',
-    after: 'gets lost.',
-    lead: 'Telegram bots, AI assistants, websites and CRM integrations. Built so that a lead travels from the form to the payment on its own.',
+    before: 'We automate',
+    chips: ['leads', 'client replies', 'bookings', 'price tracking', 'reports'],
+    after: 'Code does the routine, not people.',
+    lead: 'Websites, Telegram bots, AI assistants and CRMs that work for your staff. Around the clock, and nobody “forgets to call back”.',
     secondary: 'How it works',
-    cue: 'Scroll: follow one lead all the way',
+    cue: 'Scroll: we will show it on one client',
   },
   story: {
-    label: 'The path of a lead',
+    label: 'One client — three of our products',
     steps: [
       {
         name: 'Website',
-        title: 'Catch',
-        text: 'A website that leaves you with a lead: catalogue, search, a one-step form.',
+        title: 'The site catches',
+        text: 'Catalogue, search and a one-step form: a visitor becomes a lead.',
         proof: 'That is how the gate and automation dealer site works: a 421-item catalogue, search that reads “ghbdjl” as the Russian word for “drive”.',
       },
       {
         name: 'Bot',
-        title: 'Deliver',
-        text: 'The lead lands in Telegram right away. A copy goes to email and to a log, in case something breaks.',
-        proof: 'At the dealer, leads go to Telegram and email, with a backup log in the admin panel. Our Vinted bot delivers new listings within seconds.',
+        title: 'The bot replies',
+        text: 'The lead reaches a manager within seconds, and the client gets an answer right away from a bot or an AI assistant — based on your documents.',
+        proof: 'At the dealer, leads go to Telegram and email, with a backup log in the admin panel. In TenderRadar a language model scores every procurement on its own.',
       },
       {
         name: 'CRM',
-        title: 'Close the deal',
+        title: 'The CRM closes the deal',
         text: 'Every lead is visible by stage: who took it, what is next, when it gets paid.',
         proof: 'The CRM/ERP for a service company runs an order from request to payment and analytics: 15 modules, and the database rejects double bookings.',
       },
     ],
     outro: {
-      title: 'Website, bot and CRM from one team.',
-      text: 'No gaps between contractors where leads fall through. Need just one part? We take that too.',
+      title: 'All of it is one team.',
+      text: 'Order one part — just a bot, just a site, just the CRM link. Or all of it, with no gaps between contractors.',
     },
     form: {
       title: 'New request',
@@ -70,8 +70,8 @@ export const en: Content = {
       bot: 'bot',
       now: 'now',
       title: 'New lead from the website',
-      reply: 'Request received, a manager can already see it.',
-      copy: 'Copy: email and log',
+      reply: 'The AI assistant has already replied to the client: “The measurement is free, the next slot is Thursday, 2 pm. Shall I book you?”',
+      copy: 'Answer from your price list · copy in the CRM'
     },
     board: {
       title: 'CRM · orders',
@@ -90,7 +90,7 @@ export const en: Content = {
         points: ['Booking into free slots', 'Reminders a day and an hour before', 'Leads to the owner in Telegram'],
         price: 'from $80',
         time: 'from 3 days',
-        proof: 'Like our Vinted bot and the dealer site leads',
+        proof: 'Like the Telegram leads on the dealer site'
       },
       {
         name: 'AI assistant on your documents',
@@ -122,7 +122,7 @@ export const en: Content = {
         points: ['Prices, products, listings, tenders into Excel', 'Checks on a schedule', 'Telegram alerts about what matters'],
         price: 'from $60',
         time: 'from 2 days',
-        proof: 'Like our Vinted bot and TenderRadar',
+        proof: 'Like TenderRadar and the dealer catalogue scraper for 421 items'
       },
       {
         name: 'Custom system',
@@ -164,7 +164,7 @@ export const en: Content = {
   works: {
     label: 'Work',
     title: 'Already running',
-    lead: 'A short list of what we built and launched. Click a row to open it.',
+    lead: 'Three projects we stand behind: two commercial projects in use and our own product. Click a row to open it.',
     items: [
       {
         id: 'dealer',
@@ -177,6 +177,7 @@ export const en: Content = {
           'Leads go to Telegram and email, with a backup log in the admin panel.',
           'Admin panel with rollback up to 40 versions and protection from simultaneous editing.',
           'Dealer account with personal prices and Excel export.',
+          'Daily price check against the supplier, 301 redirects from old addresses, SSL Labs A+.',
         ],
         stack: 'Next.js 16 · React 19 · TypeScript · Tailwind 4',
       },
@@ -195,19 +196,6 @@ export const en: Content = {
         stack: 'Java 25 · Spring Boot 4.1 · PostgreSQL + PostGIS · React 19 · TanStack · MapLibre · ECharts',
       },
       {
-        id: 'vinted',
-        title: 'Vinted Telegram Bot',
-        meta: 'Open source · built for in-house reselling',
-        tags: ['Telegram bot', 'Scraping'],
-        lead: 'Watches saved searches on Vinted and sends new listings within seconds.',
-        facts: [
-          'Item card from a link, a watchlist, a separate forum topic for every search.',
-          'Backoff and a request budget for proxies to stay within the limits.',
-          'Outlived the marketplace JSON API shutdown by switching to reading the catalogue page.',
-        ],
-        stack: 'Java 17 · Spring Boot 3.2 · PostgreSQL + Flyway · Jsoup · Docker',
-      },
-      {
         id: 'tender',
         title: 'TenderRadar',
         meta: 'Private repository · runs on demo data',
@@ -219,32 +207,6 @@ export const en: Content = {
           'An LLM scores how relevant each procurement is.',
         ],
         stack: 'Python 3.12 · FastAPI · SQLAlchemy 2 · Redis · aiogram 3 · React 18',
-      },
-      {
-        id: 'pulse',
-        title: 'Pulse',
-        meta: 'Open source · live demo',
-        tags: ['Dashboard', 'Real time'],
-        lead: 'A real-time dashboard with Telegram alerts.',
-        facts: [
-          'About 530 instruments in real time over WebSocket.',
-          'Signals are detected on the server and their outcome is tracked; an honest report says they do not predict direction.',
-          'k6 load tests, size and CLS budgets in Playwright, 5 CI workflows.',
-        ],
-        stack: 'Java 25 · Spring Boot 4.1 · PostgreSQL · TypeScript · Vite · Lightweight Charts',
-      },
-      {
-        id: 'engine',
-        title: 'distributed-task-engine',
-        meta: 'Open source · live demo',
-        tags: ['Backend', 'Queues'],
-        lead: 'A background job queue with priorities and a dashboard.',
-        facts: [
-          'Priorities on a Redis sorted set, claiming jobs with FOR UPDATE SKIP LOCKED.',
-          'Retries with backoff, dead-letter, worker heartbeats.',
-          'Queue state on the dashboard over STOMP.',
-        ],
-        stack: 'Java 21 · Spring Boot 3.5 · PostgreSQL · Redis',
       },
     ],
     search: {

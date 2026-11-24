@@ -52,7 +52,7 @@ for (const [name, viewport] of [
   }
   await toProgress(page, 0)
   await page.waitForTimeout(700)
-  ok(await page.locator('.hero__title .chip').isVisible(), 'первый экран: слово «заявка» стоит в заголовке')
+  ok(await page.locator('.hero__title .chip').isVisible(), 'первый экран: плашка стоит в заголовке')
   ok((await page.locator('.journey .card').evaluate((el) => getComputedStyle(el).opacity)) === '0', 'первый экран: летящая карточка ещё спрятана')
 
   await toProgress(page, 0.25)
@@ -72,7 +72,14 @@ for (const [name, viewport] of [
   ok((await page.locator('.journey .status.is-paid').count()) === 1, 'шаг 3: карточка дошла до «Оплачено»')
   ok((await overflow(page)) <= 0, 'нет горизонтального скролла')
 
-  /* «Как работает» в шапке ведёт к первому шагу */
+  /* слово в плашке меняется само, пока посетитель на первом экране */
+  await toProgress(page, 0)
+  await page.waitForTimeout(800)
+  const firstWord = await page.locator('.hero__title .chip__word').textContent()
+  await page.waitForTimeout(2600)
+  ok((await page.locator('.hero__title .chip__word').textContent()) !== firstWord, 'слово в плашке меняется')
+
+  /* «Как это работает» ведёт к первому шагу */
   if (name.startsWith('desktop')) {
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }))
     await page.locator('.hero__actions a[href="#how"]').click()
@@ -88,9 +95,9 @@ for (const [name, viewport] of [
   /* Работы */
   await page.locator('#works').scrollIntoViewIfNeeded()
   await page.screenshot({ path: `${OUT}/${name}-works.png` })
-  ok((await page.locator('.work').count()) === 6, 'в «Работах» шесть проектов')
+  ok((await page.locator('.work').count()) === 3, 'в «Работах» три проекта')
   if (name.startsWith('desktop')) {
-    await page.locator('.work[data-work="pulse"] .work__row').hover()
+    await page.locator('.work[data-work="crm"] .work__row').hover()
     await page.waitForTimeout(600)
     ok((await page.locator('.works__float-item.is-on').count()) === 1, 'при наведении за курсором появляется схема проекта')
     await page.screenshot({ path: `${OUT}/${name}-works-hover.png` })

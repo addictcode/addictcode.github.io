@@ -1,28 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Work, WorkId } from '../content'
-import { workLinks } from '../content/profile'
 import { useLang } from '../i18n/LangContext'
-import { ExternalLink } from './ExternalLink'
 import { Plus } from './Icons'
 import { LayoutSearch } from './LayoutSearch'
 import { Preview } from './Previews'
-
-/** Ссылки проекта, если они есть. */
-function WorkLinks({ id }: { id: WorkId }) {
-  const { t } = useLang()
-  const links = (workLinks as Record<string, { code: string; demo?: string }>)[id]
-  if (!links) return null
-  return (
-    <div className="actions">
-      {links.demo && (
-        <ExternalLink href={links.demo} variant="solid">
-          {t.ui.liveDemo}
-        </ExternalLink>
-      )}
-      <ExternalLink href={links.code}>{t.ui.code}</ExternalLink>
-    </div>
-  )
-}
 
 function Row({ work, index, open, onToggle, onHover }: { work: Work; index: number; open: boolean; onToggle: () => void; onHover: (id: WorkId | null) => void }) {
   const { t } = useLang()
@@ -49,7 +30,6 @@ function Row({ work, index, open, onToggle, onHover }: { work: Work; index: numb
               ))}
             </ul>
             <p className="work__stack mono">{work.stack}</p>
-            <WorkLinks id={work.id} />
           </div>
           <div className="work__side">
             <Preview id={work.id} />
