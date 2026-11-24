@@ -1,4 +1,4 @@
-/** Иконки рисуются линиями, без эмодзи. Все декоративные: aria-hidden. */
+/** Иконки рисуются линиями, без эмодзи. Все декоративные. */
 
 const base = {
   width: 16,
@@ -7,6 +7,8 @@ const base = {
   fill: 'none',
   stroke: 'currentColor',
   strokeWidth: 1.8,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
   'aria-hidden': true,
   focusable: false,
 } as const
@@ -14,31 +16,41 @@ const base = {
 export function ArrowOut() {
   return (
     <svg {...base}>
-      <path d="M4 12 12 4M5.5 4H12v6.5" />
+      <path d="M4.5 11.5 11.5 4.5M6 4.5h5.5V10" />
     </svg>
   )
 }
 
-export function ArrowRight() {
+export function ArrowDown() {
   return (
     <svg {...base}>
-      <path d="M2 8h11M9 4l4 4-4 4" />
+      <path d="M8 2.5v11M3.5 9 8 13.5 12.5 9" />
     </svg>
   )
 }
 
-export function PlaneIcon() {
+export function Plus() {
   return (
     <svg {...base}>
-      <path d="M14 2 1.5 7l4.5 1.8M14 2l-2.5 11.5L6 8.8M14 2 6 8.8v4l2.3-2.2" strokeLinejoin="round" />
+      <path d="M8 3v10M3 8h10" />
     </svg>
   )
 }
 
-export function ArrowLeft() {
+/** Одна галочка: «доставлено». */
+export function Tick() {
   return (
-    <svg {...base}>
-      <path d="M14 8H3M7 4 3 8l4 4" />
+    <svg {...base} viewBox="0 0 16 12">
+      <path d="M2 6.5 5.5 10 14 1.5" />
+    </svg>
+  )
+}
+
+/** Две галочки: «доставлено и прочитано». Это же знак студии. */
+export function Ticks() {
+  return (
+    <svg {...base} viewBox="0 0 22 12">
+      <path d="M1.5 6.5 5 10 13.5 1.5M9.5 9l1 1L19 1.5" />
     </svg>
   )
 }

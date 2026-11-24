@@ -1,14 +1,12 @@
 // Сквозная проверка собранного сайта в Chromium:
-// главная (первый экран, карта и её узлы, услуги, проекты, демо, контакты, навигация), страницы проектов,
-// горизонтальный скролл, оба демо, шесть прототипов, переключатель языка, режимы без WebGL и с prefers-reduced-motion.
+// путь заявки на 1440 и 375 px (скриншоты по точкам прогресса), раздел «Работы» (раскрытие, схема за курсором,
+// поиск по раскладке), заявка в Telegram, переключатель языка, статичная версия при prefers-reduced-motion.
 // Запуск: npm run build && npm run check. Скриншоты ложатся в test-results/.
 import { mkdir } from 'node:fs/promises'
 import { launchBrowser, startSite } from './browser.mjs'
 
-const PROJECTS = ['site', 'bot', 'crm', 'realtime', 'parsing']
-const LABS = ['booking', 'shop', 'assistant', 'leads', 'prices', 'cabinet']
-const PAGES = [...PROJECTS, ...LABS]
 const OUT = 'test-results'
+const POINTS = [0, 0.06, 0.25, 0.52, 0.78, 0.97]
 const failures = []
 const ok = (condition, message) => {
   console.log(`${condition ? '  ok  ' : ' FAIL '} ${message}`)
@@ -19,272 +17,138 @@ await mkdir(OUT, { recursive: true })
 const site = await startSite()
 const browser = await launchBrowser()
 
-async function open(options = {}, path = '') {
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, ...options })
+async function open(options = {}, query = '') {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, ...options })
   const page = await context.newPage()
   const errors = []
   page.on('pageerror', (error) => errors.push(error.message))
-  await page.goto(site.url + path, { waitUntil: 'networkidle' })
-  // карта грузится по первому действию посетителя: имитируем его
-  await page.evaluate(() => window.dispatchEvent(new Event('scroll')))
+  page.on('console', (message) => message.type() === 'error' && errors.push(message.text()))
+  await page.goto(site.url + query, { waitUntil: 'networkidle' })
   return { context, page, errors }
 }
 
 const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
-const scrollTo = (page, selector) => page.evaluate((s) => document.querySelector(s).scrollIntoView({ behavior: 'instant' }), selector)
-/** у какого проекта стоит камера: блок посередине экрана и подсказка у его узла */
-const chapterAt = (page) =>
-  page.evaluate(() => {
-    const middle = window.innerHeight / 2
-    const hit = [...document.querySelectorAll('[data-chapter]')].find((el) => {
-      const box = el.getBoundingClientRect()
-      return box.top <= middle && box.bottom > middle
-    })
-    return hit?.dataset.chapter ?? null
-  })
+const toProgress = (page, p) =>
+  page.evaluate((progress) => {
+    const section = document.querySelector('.journey')
+    const top = section.getBoundingClientRect().top + window.scrollY
+    window.scrollTo({ top: top + progress * (section.offsetHeight - window.innerHeight), behavior: 'instant' })
+  }, p)
+const activeStep = (page) => page.evaluate(() => document.querySelector('.step[data-on]')?.getAttribute('data-step') ?? null)
 
-/* 1. Главная и страницы проектов */
+/* 1. Путь заявки */
 for (const [name, viewport] of [
   ['desktop-1440', { width: 1440, height: 900 }],
   ['mobile-375', { width: 375, height: 740 }],
 ]) {
   console.log(`\n${name}`)
-  const { context, page, errors } = await open({ viewport, deviceScaleFactor: 1, hasTouch: name.startsWith('mobile') })
-  await page.waitForSelector('html[data-canvas]', { timeout: 30000 }).catch(() => {})
-  ok((await page.locator('html[data-canvas]').count()) === 1, '3D-карта отрисовалась')
-  await page.waitForTimeout(1500)
-  await page.screenshot({ path: `${OUT}/${name}-home-intro.png` })
-  ok((await page.locator('main h1').count()) === 1, 'на главной один заголовок первого уровня')
-  ok((await page.locator('#services .row').count()) === 9, 'в разделе услуг 9 строк')
-  ok((await page.locator('#projects .project').count()) === 5, 'в разделе проектов 5 проектов')
-  ok((await page.locator('#demos .row .tag').count()) === 6, 'шесть демо помечены как демо')
-  ok((await page.locator('#contact .handle').count()) === 1, 'в контактах есть Telegram')
-
-  for (const [selector, chapter] of [['#services', ''], ['[data-project="crm"]', '3'], ['#contact', '6']]) {
-    await scrollTo(page, selector)
-    await page.waitForTimeout(400)
-    ok((await chapterAt(page)) === chapter, `раздел ${selector}: камера ${chapter ? `у проекта ${chapter}` : 'показывает всю карту'}`)
+  const { context, page, errors } = await open({ viewport, hasTouch: name.startsWith('mobile') })
+  await page.waitForTimeout(1800)
+  ok((await page.locator('h1').count()) === 1, 'один заголовок первого уровня')
+  for (const p of POINTS) {
+    await toProgress(page, p)
+    await page.waitForTimeout(900)
+    await page.screenshot({ path: `${OUT}/${name}-journey-${String(Math.round(p * 100)).padStart(2, '0')}.png` })
   }
-  await scrollTo(page, '[data-project="crm"]')
-  await page.waitForTimeout(1500)
-  if (name.startsWith('desktop')) ok((await page.locator('.hotspot[data-node="crm"][data-active]').count()) === 1, 'у узла проекта, о котором читают, видна подсказка')
-  await page.screenshot({ path: `${OUT}/${name}-home-project.png` })
+  await toProgress(page, 0)
+  await page.waitForTimeout(700)
+  ok(await page.locator('.hero__title .chip').isVisible(), 'первый экран: слово «заявка» стоит в заголовке')
+  ok((await page.locator('.journey .card').evaluate((el) => getComputedStyle(el).opacity)) === '0', 'первый экран: летящая карточка ещё спрятана')
 
+  await toProgress(page, 0.25)
+  await page.waitForTimeout(900)
+  ok((await activeStep(page)) === '0', 'шаг 1 «Сайт» на экране')
+  ok((await page.locator('.journey .face--form .field__value').nth(1).textContent()).length > 3, 'шаг 1: задача печатается в форме')
+  await toProgress(page, 0.52)
+  await page.waitForTimeout(900)
+  ok((await activeStep(page)) === '1', 'шаг 2 «Бот» на экране')
+  ok((await page.locator('.journey .note__ticks.is-read').count()) === 1, 'шаг 2: заявка прочитана, две галочки')
+  await toProgress(page, 0.78)
+  await page.waitForTimeout(900)
+  ok((await activeStep(page)) === '2', 'шаг 3 «CRM» на экране')
+  await toProgress(page, 0.98)
+  await page.waitForTimeout(1100)
+  ok((await activeStep(page)) === '3', 'итог на экране')
+  ok((await page.locator('.journey .status.is-paid').count()) === 1, 'шаг 3: карточка дошла до «Оплачено»')
+  ok((await overflow(page)) <= 0, 'нет горизонтального скролла')
+
+  /* «Как работает» в шапке ведёт к первому шагу */
   if (name.startsWith('desktop')) {
-    // узел карты нажимается и ведёт на страницу проекта
-    await page.evaluate(() => window.scrollTo(0, 0))
-    await page.waitForTimeout(1500)
-    await page.locator('.hotspot[data-node="site"]').click({ force: true })
-    await page.waitForSelector('article#site')
-    ok(new URL(page.url()).hash === '#/site', 'клик по узлу карты открывает проект')
-    await page.goto(site.url)
-    await page.waitForSelector('#services')
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }))
+    await page.locator('.topbar__nav a[href="#how"]').click()
+    await page.waitForTimeout(2500)
+    ok((await activeStep(page)) === '0', 'пункт «Как работает» открывает первый шаг')
   }
 
-  // строка услуги и кнопка проекта ведут на страницу проекта
-  await page.locator('#services .row[data-offer="bot"]').first().click()
-  await page.waitForSelector('article#bot')
-  ok(new URL(page.url()).hash === '#/bot', 'строка услуги ведёт на страницу проекта')
-  await page.locator('.back').click()
-  await page.waitForSelector('#projects')
-  await page.locator('[data-project="site"] a.btn').click()
-  await page.waitForSelector('article#site')
-  ok(new URL(page.url()).hash === '#/site', 'кнопка проекта ведёт на его страницу')
+  /* Работы */
+  await page.locator('#works').scrollIntoViewIfNeeded()
+  await page.screenshot({ path: `${OUT}/${name}-works.png` })
+  ok((await page.locator('.work').count()) === 6, 'в «Работах» шесть проектов')
   if (name.startsWith('desktop')) {
-    // навигация в шапке со страницы проекта возвращает к разделу главной
-    await page.locator('.topbar__nav a[href="#demos"]').click()
-    await page.waitForSelector('#demos')
-    await page.waitForTimeout(300)
-    const top = await page.evaluate(() => document.getElementById('demos').getBoundingClientRect().top)
-    ok(Math.abs(top) < 120, 'пункт меню со страницы проекта открывает раздел главной')
+    await page.locator('.work[data-work="pulse"] .work__row').hover()
+    await page.waitForTimeout(600)
+    ok((await page.locator('.works__float-item.is-on').count()) === 1, 'при наведении за курсором появляется схема проекта')
+    await page.screenshot({ path: `${OUT}/${name}-works-hover.png` })
   }
-  await page.goto(site.url)
-  await page.waitForSelector('#intro')
-  ok((await overflow(page)) <= 0, 'главная: нет горизонтального скролла')
+  await page.locator('.work[data-work="dealer"] .work__row').click()
+  ok((await page.locator('.work[data-work="dealer"] .work__row').getAttribute('aria-expanded')) === 'true', 'строка раскрывается')
+  await page.locator('.lsearch input').fill('ghbdjl')
+  ok((await page.locator('.lsearch__out').textContent()).includes('привод'), 'поиск дилера понимает «ghbdjl»')
+  await page.locator('.work[data-work="dealer"]').screenshot({ path: `${OUT}/${name}-work-open.png` })
 
-  for (const id of PAGES) {
-    await page.goto(`${site.url}#/${id}`)
-    await page.waitForSelector(`article#${id}`)
-    await page.waitForTimeout(1600)
-    await page.screenshot({ path: `${OUT}/${name}-project-${id}.png` })
-    ok((await page.locator('main h1').count()) === 1 && (await overflow(page)) <= 0, `страница ${id}: заголовок на месте, горизонтального скролла нет`)
-  }
+  /* Заявка */
+  await page.locator('#contact').scrollIntoViewIfNeeded()
+  await page.locator('.pick[data-need="0"]').click()
+  await page.locator('.pick[data-need="2"]').click()
+  await page.locator('.request textarea').fill('Тестовая задача')
+  const href = await page.locator('[data-send]').getAttribute('href')
+  const text = decodeURIComponent(new URL(href).searchParams.get('text') ?? '')
+  ok(href.startsWith('https://t.me/heaphog?text=') && text.includes('Сайт') && text.includes('CRM') && text.includes('Тестовая задача'), 'кнопка заявки собирает текст для Telegram')
+  await page.locator('#contact').screenshot({ path: `${OUT}/${name}-contact.png` })
+  ok((await overflow(page)) <= 0, 'нет горизонтального скролла после раскрытий')
   ok(errors.length === 0, `нет ошибок в консоли ${errors.join(' | ')}`)
   await context.close()
 }
 
-/* 2. Демо «Монитор объявлений» */
-console.log('\nдемо: монитор объявлений')
-{
-  const { context, page } = await open({}, '#/bot')
-  const demo = page.locator('[data-demo="monitor"]')
-  await demo.scrollIntoViewIfNeeded()
-  await demo.locator('[data-field="brand"]').selectOption({ index: 2 })
-  await demo.locator('[data-field="size"]').selectOption({ index: 1 })
-  await demo.locator('[data-field="price"]').selectOption({ index: 1 })
-  await demo.locator('[data-action="monitor-toggle"]').click()
-  await demo.locator('.monitor__state[data-state="done"]').waitFor({ timeout: 40000 })
-  const checked = Number(await demo.locator('[data-counter="checked"]').textContent())
-  const found = Number(await demo.locator('[data-counter="found"]').textContent())
-  ok(checked === 36, `проверено ${checked} объявлений`)
-  ok(found > 0 && found < checked, `найдено совпадений: ${found}`)
-  ok((await demo.locator('.monitor__alerts .bubble').count()) > 0, 'уведомления бота появились')
-  await demo.screenshot({ path: `${OUT}/demo-monitor.png` })
-  await context.close()
-}
-
-/* 3. Демо «Заявка → бот → CRM → дашборд» */
-console.log('\nдемо: заявка → бот → CRM → дашборд')
-{
-  const { context, page } = await open({}, '#/crm')
-  const demo = page.locator('[data-demo="lead"]')
-  await demo.scrollIntoViewIfNeeded()
-  const before = Number(await demo.locator('[data-kpi="total"]').textContent())
-  await demo.locator('input[name="name"]').fill('Тест Тестов')
-  await demo.locator('select[name="need"]').selectOption({ index: 2 })
-  await demo.locator('select[name="budget"]').selectOption({ index: 0 })
-  await demo.locator('button[type="submit"]').click()
-  await page.locator('[data-demo="lead"][data-stage="4"]').waitFor({ timeout: 10000 })
-  ok((await demo.locator('.run__chat .bubble').count()) === 1, 'бот прислал сообщение')
-  ok((await demo.locator('.run__chat').textContent()).includes('Тест Тестов'), 'в сообщении имя из формы')
-  ok((await demo.locator('.run__crm tr.is-new').count()) === 1, 'в CRM появилась строка')
-  const after = Number(await demo.locator('[data-kpi="total"]').textContent())
-  ok(after === before + 1, `дашборд вырос: ${before} → ${after}`)
-  await page.screenshot({ path: `${OUT}/demo-lead.png` })
-  await context.close()
-}
-
-/* 3б. Демо-прототипы */
-console.log('\nдемо-прототипы')
-{
-  const { context, page } = await open()
-  const go = async (id) => {
-    await page.goto(`${site.url}#/${id}`)
-    await page.waitForSelector(`.lab[data-lab="${id}"]`)
-    return page.locator('.lab')
-  }
-
-  let lab = await go('booking')
-  await lab.locator('.opts .btn').first().click()
-  await lab.locator('.opts .btn').first().click()
-  await lab.locator('.opts .btn:not([disabled])').first().click()
-  await lab.locator('[data-action="pay"]').click()
-  ok((await lab.locator('[data-done]').count()) === 1 && (await lab.locator('.table tbody tr').count()) === 3, 'запись: бот подтвердил, запись появилась в админке')
-  ok((await lab.locator('[data-kpi="revenue"]').textContent()).trim().startsWith('65'), 'запись: оплата попала в выручку')
-  await lab.screenshot({ path: `${OUT}/lab-booking.png` })
-
-  lab = await go('shop')
-  await lab.locator('[data-add="0"]').click()
-  await lab.locator('[data-add="2"]').click()
-  ok((await lab.locator('[data-kpi="total"]').textContent()).trim().startsWith('36'), 'магазин: корзина считает сумму')
-  await lab.locator('[data-action="pay"]').click()
-  ok((await lab.locator('[data-order]').count()) === 1, 'магазин: продавец получил заказ')
-  await lab.screenshot({ path: `${OUT}/lab-shop.png` })
-
-  lab = await go('assistant')
-  await lab.locator('.opts .btn').nth(0).click()
-  ok((await lab.locator('[data-answer="kb"]').count()) === 1, 'ассистент: ответил по базе знаний')
-  await lab.locator('.opts .btn').nth(3).click()
-  ok((await lab.locator('[data-answer="handoff"]').count()) === 1, 'ассистент: без ответа передал оператору')
-  await lab.screenshot({ path: `${OUT}/lab-assistant.png` })
-
-  lab = await go('leads')
-  await lab.locator('input[name="name"]').fill('Тест Тестов')
-  await lab.locator('button[type="submit"]').click()
-  ok((await lab.locator('[data-stage="0"] [data-lead]').count()) === 1, 'заявки: заявка появилась в CRM')
-  await lab.locator('[data-action="move"]').click()
-  const stage = (await lab.locator('[data-stage="1"] .label').textContent()).trim()
-  ok((await lab.locator('[data-client-lead] .status').textContent()).trim() === stage, 'заявки: новый статус вернулся клиенту')
-  await lab.screenshot({ path: `${OUT}/lab-leads.png` })
-
-  lab = await go('prices')
-  for (let i = 0; i < 3; i += 1) await lab.locator('[data-action="check"]').click()
-  ok((await lab.locator('[data-kpi="checks"]').textContent()).trim() === '3', 'цены: три проверки прошли')
-  const download = page.waitForEvent('download', { timeout: 5000 }).then((file) => file.suggestedFilename(), () => '')
-  await lab.locator('[data-action="export"]').click()
-  ok((await download).endsWith('.csv'), 'цены: таблица скачивается')
-  await lab.screenshot({ path: `${OUT}/lab-prices.png` })
-
-  lab = await go('cabinet')
-  await lab.locator('input[name="name"]').fill('Тест Тестов')
-  await lab.locator('button[type="submit"]').click()
-  await lab.locator('[data-plan="2"]').click()
-  await lab.locator('[data-action="pay"]').click()
-  ok((await lab.locator('[data-cabinet="ready"]').count()) === 1, 'кабинет: подписка оформлена')
-  await lab.locator('[data-role="1"]').click()
-  ok((await lab.locator('[data-kpi="mrr"]').textContent()).trim().startsWith('146'), 'кабинет: админка считает выручку с новым пользователем')
-  await lab.screenshot({ path: `${OUT}/lab-cabinet.png` })
-  await context.close()
-}
-
-/* 4. Переключатель языка */
+/* 2. Переключатель языка */
 console.log('\nязык')
 {
   const { context, page } = await open()
-  const cyrillic = /[А-Яа-яЁё]/
   await page.locator('.langs button[lang="en"]').click()
-  await page.waitForTimeout(300)
-  // кириллица в EN-версии допустима только в примере раскладки («привод») и в каталоге схемы
-  const leftovers = () =>
-    page.evaluate(() => {
-      const walker = document.createTreeWalker(document.querySelector('#root'), NodeFilter.SHOW_TEXT)
-      const found = []
-      while (walker.nextNode()) {
-        const text = walker.currentNode.textContent.trim()
-        if (/[А-Яа-яЁё]/.test(text) && !walker.currentNode.parentElement.closest('.mock__grid') && !text.includes('привод')) found.push(text)
-      }
-      return found
-    })
-  let left = await leftovers()
-  for (const id of PAGES) {
-    await page.goto(`${site.url}#/${id}`)
-    await page.waitForSelector(`article#${id}`)
-    left = left.concat(await leftovers())
-  }
-  ok(left.length === 0, `в EN-версии не осталось русского текста ${left.slice(0, 5).join(' | ')}`)
+  await page.waitForTimeout(400)
+  await page.locator('.work[data-work="dealer"] .work__row').click()
+  // кириллица в EN допустима только в примере поиска дилера: это русские слова каталога
+  const leftovers = await page.evaluate(() => {
+    const walker = document.createTreeWalker(document.querySelector('#root'), NodeFilter.SHOW_TEXT)
+    const found = []
+    while (walker.nextNode()) {
+      const text = walker.currentNode.textContent.trim()
+      if (/[А-Яа-яЁё]/.test(text) && !walker.currentNode.parentElement.closest('.pv--dealer, .lsearch')) found.push(text)
+    }
+    return found
+  })
+  ok(leftovers.length === 0, `в EN не осталось русского текста ${leftovers.slice(0, 5).join(' | ')}`)
   ok((await page.getAttribute('html', 'lang')) === 'en', 'html lang = en')
-  ok(!cyrillic.test(await page.title()), 'заголовок вкладки на английском')
-  await page.screenshot({ path: `${OUT}/lang-en-project.png` })
+  ok(!/[А-Яа-яЁё]/.test(await page.title()), 'заголовок вкладки на английском')
+  await page.screenshot({ path: `${OUT}/lang-en.png` })
   await page.reload({ waitUntil: 'networkidle' })
   ok((await page.getAttribute('html', 'lang')) === 'en', 'выбор языка запомнился после перезагрузки')
   await context.close()
 }
 
-/* 5. Без WebGL и с prefers-reduced-motion */
-for (const [name, options, init] of [
-  ['reduced-motion', { reducedMotion: 'reduce' }, null],
-  [
-    'no-webgl',
-    {},
-    () => {
-      const original = HTMLCanvasElement.prototype.getContext
-      HTMLCanvasElement.prototype.getContext = function getContext(type, ...rest) {
-        return String(type).startsWith('webgl') ? null : original.call(this, type, ...rest)
-      }
-    },
-  ],
+/* 3. Статичная версия */
+for (const [name, options] of [
+  ['reduced-motion-1440', { reducedMotion: 'reduce' }],
+  ['reduced-motion-375', { reducedMotion: 'reduce', viewport: { width: 375, height: 740 } }],
 ]) {
   console.log(`\n${name}`)
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, ...options })
-  if (init) await context.addInitScript(init)
-  const page = await context.newPage()
-  await page.goto(site.url, { waitUntil: 'networkidle' })
-  await page.evaluate(() => window.dispatchEvent(new Event('scroll')))
-  await page.waitForTimeout(1500)
-  ok((await page.locator('html[data-canvas]').count()) === 0, 'включилась статичная версия')
-  ok((await page.locator('canvas').count()) === 0, 'canvas не создавался')
-  const posterShown = await page
-    .waitForFunction(() => {
-      const img = document.querySelector('.stage__poster img')
-      return img?.complete && img.naturalWidth > 0 && img.currentSrc.includes('map')
-    }, null, { timeout: 5000 })
-    .then(() => true, () => false)
-  ok(posterShown, 'на первом экране показан кадр карты')
-  ok((await page.locator('#services .row').count()) === 9 && (await page.locator('#projects .project').count()) === 5, 'главная читается целиком')
-  await page.screenshot({ path: `${OUT}/${name}-home.png`, fullPage: true })
-  await page.goto(`${site.url}#/site`)
-  await page.waitForSelector('article#site')
-  ok((await page.locator('#site .facts > div').count()) > 0, 'страница проекта читается')
+  const { context, page, errors } = await open(options)
+  ok((await page.locator('.journey--still').count()) === 1, 'включилась статичная версия')
+  ok((await page.locator('.still__step').count()) === 3, 'все три шага стоят друг под другом')
+  ok((await page.locator('.still .card--still').count()) === 3, 'в каждой декорации видна карточка заявки')
+  await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true })
+  ok((await overflow(page)) <= 0, 'нет горизонтального скролла')
+  ok(errors.length === 0, `нет ошибок в консоли ${errors.join(' | ')}`)
   await context.close()
 }
 

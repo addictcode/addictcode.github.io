@@ -8,10 +8,9 @@ export const profile = {
 export const telegramUrl = `https://t.me/${profile.telegram}`
 export const githubUrl = `https://github.com/${profile.github}`
 
-export const links = {
-  vintedRepo: 'https://github.com/addictcode/vinted-telegram-bot',
-  pulseRepo: 'https://github.com/addictcode/pulse-crypto-screener',
-  pulseDemo: 'https://addictcode.github.io/pulse-crypto-screener/',
-  taskEngineRepo: 'https://github.com/addictcode/distributed-task-engine',
-  taskEngineDemo: 'https://addictcode.github.io/distributed-task-engine/',
+/** Ссылки проектов из раздела «Работы». У коммерческих заказов и TenderRadar ссылок нет. */
+export const workLinks = {
+  vinted: { code: 'https://github.com/addictcode/vinted-telegram-bot' },
+  pulse: { code: 'https://github.com/addictcode/pulse-crypto-screener', demo: 'https://addictcode.github.io/pulse-crypto-screener/' },
+  engine: { code: 'https://github.com/addictcode/distributed-task-engine', demo: 'https://addictcode.github.io/distributed-task-engine/' },
 } as const

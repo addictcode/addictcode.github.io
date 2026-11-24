@@ -1,5 +1,5 @@
-// Собирает OG-картинку 1200×630 и PNG-иконки в стиле сайта.
-// Снимается первый экран статичной версии: тексты из src/content, карта из public/posters.
+// Собирает OG-картинку 1200×630 и PNG-иконки.
+// Снимается первый экран собранного сайта: заголовок со словом-карточкой.
 // Нужна свежая сборка: npm run build && npm run og
 import { readFile } from 'node:fs/promises'
 import sharp from 'sharp'
@@ -8,13 +8,11 @@ import { launchBrowser, startSite } from './browser.mjs'
 const site = await startSite()
 const browser = await launchBrowser()
 const page = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 })
-await page.goto(`${site.url}?static`, { waitUntil: 'networkidle' })
-
-// OG — это первый экран как есть: заголовок и карта
-await page.addStyleTag({ content: '.topbar, .hero__hint, .hero__scroll, .skip { display: none !important }' })
-await page.waitForFunction(() => document.querySelector('.stage__poster img').complete)
+await page.goto(site.url, { waitUntil: 'networkidle' })
+// на картинке нужен сам заголовок: без меню, кнопок и подсказки
+await page.addStyleTag({ content: '.topbar__nav, .topbar__tools, .hero__actions, .hero__cue, .skip { display: none !important }' })
 await page.evaluate(() => document.fonts.ready)
-await page.waitForTimeout(300)
+await page.waitForTimeout(2600)
 await page.screenshot({ path: 'public/og.png' })
 await browser.close()
 await site.close()

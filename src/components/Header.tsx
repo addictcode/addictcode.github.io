@@ -1,44 +1,34 @@
 import { languages } from '../content'
-import { profile, telegramUrl } from '../content/profile'
+import { telegramUrl } from '../content/profile'
 import { useLang } from '../i18n/LangContext'
-import { emit } from '../system/bus'
-import { SECTIONS } from '../system/graph'
+import { ArrowOut } from './Icons'
+import { Logo } from './Logo'
 
 export function Header() {
   const { t, lang, setLang } = useLang()
-
-  const switchLang = (code: typeof lang) => {
-    if (code === lang) return
-    setLang(code)
-    emit({})
-  }
-
   return (
     <header className="topbar">
-      <a className="topbar__brand" href="#/" data-log="off">
-        {profile.studio}
+      <a className="topbar__brand" href="#top" aria-label="addictcode">
+        <Logo />
       </a>
-      <nav className="topbar__nav" aria-label={t.ui.chapterNav}>
-        <ol>
-          {SECTIONS.map((id) => (
-            <li key={id}>
-              <a href={`#${id}`} data-log="off">
-                {t.home.nav[id]}
-              </a>
-            </li>
-          ))}
-        </ol>
+      <nav className="topbar__nav" aria-label={t.ui.navLabel}>
+        <a href="#how">{t.ui.nav.how}</a>
+        <a href="#works">{t.ui.nav.works}</a>
+        <a href="#contact">{t.ui.nav.contact}</a>
       </nav>
       <div className="topbar__tools">
         <div className="langs mono" role="group" aria-label={t.ui.langSwitch}>
           {languages.map((code) => (
-            <button key={code} type="button" aria-pressed={lang === code} lang={code} data-log="off" onClick={() => switchLang(code)}>
+            <button key={code} type="button" aria-pressed={lang === code} lang={code} onClick={() => setLang(code)}>
               {code.toUpperCase()}
             </button>
           ))}
         </div>
-        <a className="topbar__tg" href={telegramUrl} target="_blank" rel="noreferrer">
-          Telegram
+        <a className="btn btn--solid btn--small" href={telegramUrl} target="_blank" rel="noreferrer">
+          <span className="topbar__cta-long">{t.ui.cta}</span>
+          <span className="topbar__cta-short">{t.ui.telegram}</span>
+          <ArrowOut />
+          <span className="visually-hidden">({t.ui.external})</span>
         </a>
       </div>
     </header>
