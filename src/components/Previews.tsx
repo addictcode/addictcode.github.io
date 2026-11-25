@@ -37,21 +37,6 @@ function Crm() {
   )
 }
 
-function Vinted() {
-  return (
-    <div className="pv pv--vinted">
-      {[0, 1, 2].map((i) => (
-        <span key={i} className={`pv__msg${i === 2 ? ' is-hit' : ''}`}>
-          <i />
-          <span>
-            <b />
-            <b />
-          </span>
-        </span>
-      ))}
-    </div>
-  )
-}
 
 function Tender() {
   const scores = [0.9, 0.62, 0.35, 0.78]
@@ -67,37 +52,9 @@ function Tender() {
   )
 }
 
-function Pulse() {
-  return (
-    <div className="pv pv--pulse">
-      <svg viewBox="0 0 200 100" preserveAspectRatio="none">
-        <polyline points="0,70 18,64 32,72 50,50 66,58 84,40 100,46 118,30 134,38 152,22 170,30 200,12" />
-      </svg>
-      <span className="pv__alert" />
-    </div>
-  )
-}
 
-function Engine() {
-  const lanes = [
-    [0.5, 0.2, 0.15],
-    [0.3, 0.4],
-    [0.2, 0.15, 0.25, 0.2],
-  ]
-  return (
-    <div className="pv pv--engine">
-      {lanes.map((lane, i) => (
-        <span key={i} className="pv__lane">
-          {lane.map((w, j) => (
-            <i key={j} style={{ flexGrow: w }} className={i === 0 && j === 0 ? 'is-hit' : ''} />
-          ))}
-        </span>
-      ))}
-    </div>
-  )
-}
 
-const PREVIEWS: Record<WorkId, () => JSX.Element> = { dealer: Dealer, crm: Crm, vinted: Vinted, tender: Tender, pulse: Pulse, engine: Engine }
+const PREVIEWS: Record<WorkId, () => JSX.Element> = { dealer: Dealer, crm: Crm, tender: Tender }
 
 export function Preview({ id }: { id: WorkId }) {
   const Drawing = PREVIEWS[id]

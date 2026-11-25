@@ -1,6 +1,6 @@
 export type Lang = 'ru' | 'en'
 
-export type WorkId = 'dealer' | 'crm' | 'vinted' | 'tender' | 'pulse' | 'engine'
+export type WorkId = 'dealer' | 'crm' | 'tender'
 
 export interface Work {
   id: WorkId
@@ -11,6 +11,18 @@ export interface Work {
   lead: string
   facts: string[]
   stack: string
+}
+
+export interface Service {
+  name: string
+  /** кому подходит */
+  forWho: string
+  /** что входит в основной пакет */
+  points: string[]
+  price: string
+  time: string
+  /** где это уже работает */
+  proof: string
 }
 
 export interface Step {
@@ -25,7 +37,7 @@ export interface Content {
   meta: { title: string; description: string }
   ui: {
     skip: string
-    nav: { how: string; works: string; contact: string }
+    nav: { services: string; works: string; terms: string; contact: string }
     navLabel: string
     langSwitch: string
     cta: string
@@ -41,7 +53,8 @@ export interface Content {
     eyebrow: string
     /** заголовок: текст до слова-карточки, само слово, текст после */
     before: string
-    chip: string
+    /** слова в плашке сменяют друг друга: что именно автоматизируем */
+    chips: string[]
     after: string
     lead: string
     secondary: string
@@ -54,6 +67,25 @@ export interface Content {
     form: { title: string; name: string; nameValue: string; task: string; taskValue: string; source: string; sourceValue: string; send: string; sent: string }
     note: { chat: string; bot: string; now: string; title: string; reply: string; copy: string }
     board: { title: string; columns: [string, string, string, string, string]; paid: string }
+  }
+  services: {
+    label: string
+    title: string
+    lead: string
+    items: Service[]
+    choose: string
+    note: string
+  }
+  terms: {
+    label: string
+    title: string
+    steps: { name: string; text: string }[]
+    rules: string[]
+  }
+  faq: {
+    label: string
+    title: string
+    items: { q: string; a: string }[]
   }
   stack: string[]
   works: {

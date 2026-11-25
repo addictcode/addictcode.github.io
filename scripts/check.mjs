@@ -52,7 +52,7 @@ for (const [name, viewport] of [
   }
   await toProgress(page, 0)
   await page.waitForTimeout(700)
-  ok(await page.locator('.hero__title .chip').isVisible(), 'первый экран: слово «заявка» стоит в заголовке')
+  ok(await page.locator('.hero__title .chip').isVisible(), 'первый экран: плашка стоит в заголовке')
   ok((await page.locator('.journey .card').evaluate((el) => getComputedStyle(el).opacity)) === '0', 'первый экран: летящая карточка ещё спрятана')
 
   await toProgress(page, 0.25)
@@ -72,20 +72,32 @@ for (const [name, viewport] of [
   ok((await page.locator('.journey .status.is-paid').count()) === 1, 'шаг 3: карточка дошла до «Оплачено»')
   ok((await overflow(page)) <= 0, 'нет горизонтального скролла')
 
-  /* «Как работает» в шапке ведёт к первому шагу */
+  /* слово в плашке меняется само, пока посетитель на первом экране */
+  await toProgress(page, 0)
+  await page.waitForTimeout(800)
+  const firstWord = await page.locator('.hero__title .chip__word').textContent()
+  await page.waitForTimeout(2600)
+  ok((await page.locator('.hero__title .chip__word').textContent()) !== firstWord, 'слово в плашке меняется')
+
+  /* «Как это работает» ведёт к первому шагу */
   if (name.startsWith('desktop')) {
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }))
-    await page.locator('.topbar__nav a[href="#how"]').click()
+    await page.locator('.hero__actions a[href="#how"]').click()
     await page.waitForTimeout(2500)
-    ok((await activeStep(page)) === '0', 'пункт «Как работает» открывает первый шаг')
+    ok((await activeStep(page)) === '0', 'кнопка «Как это работает» открывает первый шаг')
   }
+
+  /* Услуги */
+  ok((await page.locator('.service').count()) === 6, 'в «Услугах» шесть решений с ценой')
+  await page.locator('#services').scrollIntoViewIfNeeded()
+  await page.screenshot({ path: `${OUT}/${name}-services.png` })
 
   /* Работы */
   await page.locator('#works').scrollIntoViewIfNeeded()
   await page.screenshot({ path: `${OUT}/${name}-works.png` })
-  ok((await page.locator('.work').count()) === 6, 'в «Работах» шесть проектов')
+  ok((await page.locator('.work').count()) === 3, 'в «Работах» три проекта')
   if (name.startsWith('desktop')) {
-    await page.locator('.work[data-work="pulse"] .work__row').hover()
+    await page.locator('.work[data-work="crm"] .work__row').hover()
     await page.waitForTimeout(600)
     ok((await page.locator('.works__float-item.is-on').count()) === 1, 'при наведении за курсором появляется схема проекта')
     await page.screenshot({ path: `${OUT}/${name}-works-hover.png` })
@@ -96,14 +108,21 @@ for (const [name, viewport] of [
   ok((await page.locator('.lsearch__out').textContent()).includes('привод'), 'поиск дилера понимает «ghbdjl»')
   await page.locator('.work[data-work="dealer"]').screenshot({ path: `${OUT}/${name}-work-open.png` })
 
-  /* Заявка */
-  await page.locator('#contact').scrollIntoViewIfNeeded()
-  await page.locator('.pick[data-need="0"]').click()
+  /* Условия и вопросы */
+  await page.locator('.faq__item').first().locator('summary').click()
+  ok(await page.locator('.faq__item').first().locator('p').isVisible(), 'вопрос раскрывается')
+  await page.locator('#terms').scrollIntoViewIfNeeded()
+  await page.screenshot({ path: `${OUT}/${name}-terms.png` })
+
+  /* Заявка: «Выбрать» у услуги отмечает её в карточке */
+  await page.locator('[data-choose="0"]').click()
+  await page.waitForTimeout(1500)
+  ok((await page.locator('.pick[data-need="0"]').getAttribute('aria-pressed')) === 'true', '«Выбрать» отмечает услугу в заявке')
   await page.locator('.pick[data-need="2"]').click()
   await page.locator('.request textarea').fill('Тестовая задача')
   const href = await page.locator('[data-send]').getAttribute('href')
   const text = decodeURIComponent(new URL(href).searchParams.get('text') ?? '')
-  ok(href.startsWith('https://t.me/heaphog?text=') && text.includes('Сайт') && text.includes('CRM') && text.includes('Тестовая задача'), 'кнопка заявки собирает текст для Telegram')
+  ok(href.startsWith('https://t.me/heaphog?text=') && text.includes('Telegram-бот') && text.includes('CRM') && text.includes('Тестовая задача'), 'кнопка заявки собирает текст для Telegram')
   await page.locator('#contact').screenshot({ path: `${OUT}/${name}-contact.png` })
   ok((await overflow(page)) <= 0, 'нет горизонтального скролла после раскрытий')
   ok(errors.length === 0, `нет ошибок в консоли ${errors.join(' | ')}`)

@@ -54,3 +54,11 @@ export function Ticks() {
     </svg>
   )
 }
+
+export function ArrowRight() {
+  return (
+    <svg {...base}>
+      <path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" />
+    </svg>
+  )
+}

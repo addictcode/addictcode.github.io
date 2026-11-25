@@ -12,8 +12,9 @@ export function Header() {
         <Logo />
       </a>
       <nav className="topbar__nav" aria-label={t.ui.navLabel}>
-        <a href="#how">{t.ui.nav.how}</a>
+        <a href="#services">{t.ui.nav.services}</a>
         <a href="#works">{t.ui.nav.works}</a>
+        <a href="#terms">{t.ui.nav.terms}</a>
         <a href="#contact">{t.ui.nav.contact}</a>
       </nav>
       <div className="topbar__tools">

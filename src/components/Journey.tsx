@@ -42,6 +42,9 @@ function beatAt(p: number, taskLength: number): Beat {
   }
 }
 
+/** как часто меняется слово в плашке первого экрана, мс */
+const WORD_EVERY = 2300
+
 const sameBeat = (a: Beat, b: Beat) =>
   a.typed === b.typed && a.sent === b.sent && a.ticks === b.ticks && a.reply === b.reply && a.copy === b.copy && a.column === b.column && a.paid === b.paid
 
@@ -82,7 +85,18 @@ function LiveJourney() {
   const stepRefs = useMemo(() => [0, 1, 2, 3].map(() => createRef<HTMLElement>()), [])
   const barRefs = useMemo(() => [0, 1, 2].map(() => createRef<HTMLSpanElement>()), [])
   const [beat, setBeat] = useState<Beat>(START)
+  const [word, setWord] = useState(0)
+  /* слово меняется, только пока посетитель на первом экране */
+  const heroIdle = useRef(true)
   const taskLength = t.story.form.taskValue.length
+  const wordCount = t.hero.chips.length
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (heroIdle.current) setWord((current) => (current + 1) % wordCount)
+    }, WORD_EVERY)
+    return () => window.clearInterval(timer)
+  }, [wordCount])
 
   useEffect(() => {
     const section = sectionRef.current
@@ -209,6 +223,7 @@ function LiveJourney() {
         keys[1].box = c
       }
       const flying = p > 0.003
+      heroIdle.current = p < 0.002
       chip.style.visibility = flying ? 'hidden' : 'visible'
       card.style.opacity = flying ? '1' : '0'
       const box = track(keys, p)
@@ -320,13 +335,13 @@ function LiveJourney() {
       <span id="top" className="anchor anchor--top" />
       <span id="how" className="anchor anchor--how" />
       <div ref={stageRef} className="journey__stage">
-        <Hero titleRef={titleRef} chipRef={chipRef} restRef={restRef} />
+        <Hero word={word} titleRef={titleRef} chipRef={chipRef} restRef={restRef} />
         <div className="journey__visual">
           <SiteScene ref={siteRef} />
           <BotScene ref={botRef} reply={beat.reply} copy={beat.copy} />
           <CrmScene ref={crmRef} column={beat.column} />
           <div ref={cardRef} className="card" aria-hidden="true">
-            <ChipFace />
+            <ChipFace word={word} />
             <FormFace typed={beat.typed} sent={beat.sent} />
             <NoteFace ticks={beat.ticks} />
             <BoardFace column={beat.column} paid={beat.paid} />
